@@ -3,11 +3,19 @@ import { useState } from 'react';
 
 interface MonthYearPickerProps {
   selectedMonth: Date;
+  value?: Date;
   onChange: (date: Date) => void;
 }
 
-export function MonthYearPicker({ selectedMonth, onChange }: MonthYearPickerProps) {
+export function MonthYearPicker({ selectedMonth, value, onChange }: MonthYearPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Support both selectedMonth and value props
+  const currentDate = value || selectedMonth;
+  
+  if (!currentDate) {
+    return null;
+  }
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -18,19 +26,19 @@ export function MonthYearPicker({ selectedMonth, onChange }: MonthYearPickerProp
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 1 + i);
 
   const handleMonthChange = (monthIndex: number) => {
-    const newDate = new Date(selectedMonth);
+    const newDate = new Date(currentDate);
     newDate.setMonth(monthIndex);
     onChange(newDate);
     setIsOpen(false);
   };
 
   const handleYearChange = (year: number) => {
-    const newDate = new Date(selectedMonth);
+    const newDate = new Date(currentDate);
     newDate.setFullYear(year);
     onChange(newDate);
   };
 
-  const displayText = selectedMonth.toLocaleDateString('en-US', { 
+  const displayText = currentDate.toLocaleDateString('en-US', { 
     month: 'long', 
     year: 'numeric' 
   });
@@ -55,7 +63,7 @@ export function MonthYearPicker({ selectedMonth, onChange }: MonthYearPickerProp
             <div className="mb-3">
               <label className="text-xs text-gray-600 mb-1 block">Year</label>
               <select
-                value={selectedMonth.getFullYear()}
+                value={currentDate.getFullYear()}
                 onChange={(e) => handleYearChange(Number(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
               >
@@ -75,7 +83,7 @@ export function MonthYearPicker({ selectedMonth, onChange }: MonthYearPickerProp
                     key={month}
                     onClick={() => handleMonthChange(index)}
                     className={`px-3 py-2 text-xs rounded transition-colors ${
-                      selectedMonth.getMonth() === index
+                      currentDate.getMonth() === index
                         ? 'bg-[#EA0029] text-white'
                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                     }`}

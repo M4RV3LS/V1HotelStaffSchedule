@@ -1,7 +1,6 @@
 import { cn } from "./ui/utils";
 
 export function ShiftLegend() {
-  // Requirement 4: Specific shift list
   const items = [
     {
       color: "bg-yellow-400 border-yellow-500",
@@ -36,24 +35,24 @@ export function ShiftLegend() {
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm border-t border-gray-200 pt-4 px-4 bg-white">
-      <span className="font-bold text-gray-800 mr-2">
+    <div className="flex flex-wrap items-center gap-x-8 gap-y-4 text-sm border-t border-gray-200 pt-5 px-6 bg-white pb-2">
+      <span className="font-bold text-gray-900 mr-2 text-base">
         Shift Legend:
       </span>
       {items.map((item) => (
         <div
           key={item.label}
-          className="flex items-center gap-2"
+          className="flex items-center gap-3"
         >
           <div
             className={cn(
-              "w-4 h-4 rounded-sm border",
+              "w-5 h-5 rounded-sm border shadow-sm",
               item.color,
             )}
           />
-          <span className="text-gray-700 font-medium">
+          <span className="text-gray-700 font-medium text-sm">
             {item.label}{" "}
-            <span className="text-gray-400 font-normal text-xs ml-0.5">
+            <span className="text-gray-400 font-normal text-xs ml-1">
               ({item.time})
             </span>
           </span>

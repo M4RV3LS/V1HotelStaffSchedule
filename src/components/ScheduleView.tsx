@@ -1,12 +1,15 @@
-import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Download, Edit2, X, Save } from 'lucide-react';
-import { ScheduleGrid } from './ScheduleGrid';
-import { EmptyState } from './EmptyState';
-import { Legend } from './Legend';
-import { ShiftLegend } from './ShiftLegend';
-import { MonthYearPicker } from './MonthYearPicker';
-import { FilterCombobox, SelectedFilter } from './FilterCombobox';
-import { generateMockScheduleData, hasScheduleForMonth } from '../utils/scheduleData';
+import { useState, useMemo } from "react";
+import { Download, Edit2, X, Save, ChevronLeft, ChevronRight } from "lucide-react";
+import { ScheduleGrid } from "./ScheduleGrid";
+import { EmptyState } from "./EmptyState";
+import { ShiftLegend } from "./ScheduleControls";
+import { FilterCombobox, SelectedFilter } from "./FilterCombobox";
+import { MonthYearPicker } from "./MonthYearPicker";
+import { ExportPreviewDialog } from "./ExportPreviewDialog";
+import {
+  generateMockScheduleData,
+  hasScheduleForMonth,
+} from "../utils/scheduleData";
 
 interface ScheduleViewProps {
   selectedMonth: Date;
@@ -25,51 +28,53 @@ export function ScheduleView({
   isEditMode,
   setIsEditMode,
 }: ScheduleViewProps) {
-  const [scheduleExists, setScheduleExists] = useState(() => 
-    hasScheduleForMonth(selectedMonth)
+  const [scheduleExists, setScheduleExists] = useState(() =>
+    hasScheduleForMonth(selectedMonth),
   );
   const [scheduleData, setScheduleData] = useState(() =>
-    scheduleExists ? generateMockScheduleData(selectedMonth) : []
+    scheduleExists
+      ? generateMockScheduleData(selectedMonth)
+      : [],
   );
-  const [selectedFilters, setSelectedFilters] = useState<SelectedFilter[]>([]);
+  const [selectedFilters, setSelectedFilters] = useState<
+    SelectedFilter[]
+  >([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] =
+    useState(false);
 
-  // Calculate week boundaries
+  // --- Logic for Dates & Weeks ---
   const weekDates = useMemo(() => {
     const year = selectedMonth.getFullYear();
     const month = selectedMonth.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    
     const dates: Date[] = [];
-    for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+    for (
+      let d = new Date(firstDay);
+      d <= lastDay;
+      d.setDate(d.getDate() + 1)
+    ) {
       dates.push(new Date(d));
     }
-    
     return dates;
   }, [selectedMonth]);
 
   const currentWeekDates = useMemo(() => {
     const startIdx = currentWeekStart * 7;
     const weekSlice = weekDates.slice(startIdx, startIdx + 7);
-    
-    // Always ensure we have exactly 7 days (Mon-Sun)
-    // Pad with dates from previous/next month if needed
     const paddedWeek: Date[] = [];
-    
     if (weekSlice.length > 0) {
       const firstDate = weekSlice[0];
-      const dayOfWeek = firstDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-      const mondayOffset = dayOfWeek === 0 ? -6 : -(dayOfWeek - 1); // Calculate days until Monday
-      
-      // Start from Monday
+      const dayOfWeek = firstDate.getDay();
+      const mondayOffset =
+        dayOfWeek === 0 ? -6 : -(dayOfWeek - 1);
       for (let i = 0; i < 7; i++) {
         const date = new Date(firstDate);
         date.setDate(firstDate.getDate() + mondayOffset + i);
         paddedWeek.push(date);
       }
     }
-    
     return paddedWeek.length > 0 ? paddedWeek : weekSlice;
   }, [weekDates, currentWeekStart]);
 
@@ -77,54 +82,51 @@ export function ScheduleView({
   const canGoPrevious = currentWeekStart > 0;
   const canGoNext = currentWeekStart < totalWeeks - 1;
 
+  // --- Handlers ---
+  const monthYearDisplay = selectedMonth.toLocaleDateString(
+    "en-US",
+    { month: "long", year: "numeric" },
+  );
+
   const handleMonthChange = (newMonth: Date) => {
-    // Check if there are unsaved changes in edit mode
-    if (isEditMode) {
-      const confirmSwitch = window.confirm(
-        `You have unsaved changes. Do you want to save changes to ${monthYearDisplay} before switching months?`
-      );
-      
-      if (confirmSwitch) {
-        // Save changes before switching
-        handleSaveChanges();
-      }
+    if (
+      isEditMode &&
+      window.confirm(`Save changes to ${monthYearDisplay}?`)
+    ) {
+      handleSaveChanges();
     }
-    
     setSelectedMonth(newMonth);
     setCurrentWeekStart(0);
     const exists = hasScheduleForMonth(newMonth);
     setScheduleExists(exists);
-    if (exists) {
+    if (exists)
       setScheduleData(generateMockScheduleData(newMonth));
-    }
     setIsEditMode(false);
   };
-  
-  const handleWeekNavigation = (direction: 'next' | 'prev') => {
-    const newWeekStart = direction === 'next' ? currentWeekStart + 1 : currentWeekStart - 1;
-    const newWeekDates = weekDates.slice(newWeekStart * 7, (newWeekStart * 7) + 7);
-    
-    // Check if the new week contains dates from a different month
-    const hasOutOfMonthDates = newWeekDates.some(
-      date => date.getMonth() !== selectedMonth.getMonth() || 
-              date.getFullYear() !== selectedMonth.getFullYear()
+
+  const handleWeekNavigation = (direction: "next" | "prev") => {
+    const newWeekStart =
+      direction === "next"
+        ? currentWeekStart + 1
+        : currentWeekStart - 1;
+    const newWeekDates = weekDates.slice(
+      newWeekStart * 7,
+      newWeekStart * 7 + 7,
     );
-    
-    // If navigating to a week that's mostly in another month, switch months
+    const hasOutOfMonthDates = newWeekDates.some(
+      (date) => date.getMonth() !== selectedMonth.getMonth(),
+    );
+
     if (hasOutOfMonthDates && newWeekDates.length > 0) {
-      const targetDate = newWeekDates[direction === 'next' ? newWeekDates.length - 1 : 0];
-      const targetMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-      
-      if (isEditMode) {
-        const confirmSwitch = window.confirm(
-          `Save changes to ${monthYearDisplay} before moving to ${targetMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}?`
-        );
-        
-        if (confirmSwitch) {
-          handleSaveChanges();
-        }
-      }
-      
+      const targetDate =
+        newWeekDates[
+          direction === "next" ? newWeekDates.length - 1 : 0
+        ];
+      const targetMonth = new Date(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        1,
+      );
       handleMonthChange(targetMonth);
     } else {
       setCurrentWeekStart(newWeekStart);
@@ -132,34 +134,45 @@ export function ScheduleView({
   };
 
   const handleCreateSchedule = () => {
-    setScheduleExists(true);
-    setScheduleData(generateMockScheduleData(selectedMonth));
-    setIsEditMode(true);
     setIsCreating(true);
+    setTimeout(() => {
+      setScheduleExists(true);
+      setScheduleData(generateMockScheduleData(selectedMonth));
+      setIsEditMode(true);
+      setIsCreating(false);
+    }, 1000);
   };
 
-  const handleExport = () => {
-    const monthName = selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    alert(`Exporting full schedule for ${monthName}`);
+  const handleExportClick = () => {
+    setIsExportDialogOpen(true);
+  };
+
+  const handleConfirmExport = () => {
+    setIsExportDialogOpen(false);
+    alert(
+      `Downloading PDF schedule for ${monthYearDisplay}...`,
+    );
   };
 
   const handleSaveChanges = () => {
     setIsEditMode(false);
-    alert('Changes saved successfully!');
+    alert("Changes saved successfully!");
   };
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
-    // Reset data if needed
     setScheduleData(generateMockScheduleData(selectedMonth));
   };
 
-  // Extract unique departments, designations, and staff names from schedule data
+  // --- Filters ---
   const filterOptions = useMemo(() => {
     const departments = new Set<string>();
     const designations = new Set<string>();
-    const staffNames: { name: string; department: string; designation: string }[] = [];
-
+    const staffNames: {
+      name: string;
+      department: string;
+      designation: string;
+    }[] = [];
     scheduleData.forEach((staff) => {
       departments.add(staff.department);
       designations.add(staff.designation);
@@ -169,170 +182,151 @@ export function ScheduleView({
         designation: staff.designation,
       });
     });
-
     return {
       departments: Array.from(departments).sort(),
       designations: Array.from(designations).sort(),
-      staffNames: staffNames.sort((a, b) => a.name.localeCompare(b.name)),
+      staffNames: staffNames.sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
     };
   }, [scheduleData]);
 
-  // Filter schedule data based on selected filters
   const filteredScheduleData = useMemo(() => {
-    if (selectedFilters.length === 0) {
-      return scheduleData;
-    }
-
+    if (selectedFilters.length === 0) return scheduleData;
     return scheduleData.filter((staff) => {
-      // Check if staff matches any selected filter
       return selectedFilters.some((filter) => {
-        if (filter.type === 'department') {
+        if (filter.type === "department")
           return staff.department === filter.value;
-        }
-        if (filter.type === 'designation') {
+        if (filter.type === "designation")
           return staff.designation === filter.value;
-        }
-        if (filter.type === 'name') {
+        if (filter.type === "name")
           return staff.staffName === filter.value;
-        }
         return false;
       });
     });
   }, [scheduleData, selectedFilters]);
 
-  const monthYearDisplay = selectedMonth.toLocaleDateString('en-US', { 
-    month: 'long', 
-    year: 'numeric' 
-  });
-
-  const weekDisplay = currentWeekDates.length > 0
-    ? `Week ${currentWeekStart + 1} (${currentWeekDates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${currentWeekDates[currentWeekDates.length - 1].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`
-    : '';
+  const weekDisplay =
+    currentWeekDates.length > 0
+      ? `Week ${currentWeekStart + 1} (${currentWeekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${currentWeekDates[currentWeekDates.length - 1].toLocaleDateString("en-US", { month: "short", day: "numeric" })})`
+      : "";
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header Section - Fixed */}
-      <div className="bg-[#EA0029] text-white px-6 py-3 flex items-center justify-between sticky top-0 z-40">
-        <h1 className="text-lg">
+    <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
+      {/* 1. Header Section */}
+      <div className="bg-[#EA0029] text-white px-6 py-3 flex items-center justify-between shrink-0 shadow-md z-40">
+        <h1 className="text-lg font-medium tracking-wide">
           Staff Schedule - {monthYearDisplay}
-          {isEditMode && ' - Edit Mode'}
+          {isEditMode && (
+            <span className="opacity-80 font-normal">
+              {" "}
+              (Editing)
+            </span>
+          )}
         </h1>
-        
+
         <div className="flex items-center gap-3">
           {scheduleExists && !isEditMode && (
             <>
               <button
                 onClick={() => setIsEditMode(true)}
-                className="px-4 py-2 bg-white text-[#EA0029] rounded hover:bg-gray-100 flex items-center gap-2"
+                className="px-3 py-1.5 bg-white/10 text-white border border-white/20 rounded hover:bg-white/20 transition-colors flex items-center gap-2 text-sm"
               >
-                <Edit2 className="w-4 h-4" />
-                Edit
+                <Edit2 className="w-4 h-4" /> Edit
               </button>
               <button
-                onClick={handleExport}
-                className="px-4 py-2 bg-white text-[#EA0029] rounded hover:bg-gray-100 flex items-center gap-2"
+                onClick={handleExportClick}
+                className="px-3 py-1.5 bg-white text-[#EA0029] font-medium rounded hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm shadow-sm"
               >
-                <Download className="w-4 h-4" />
-                Export
+                <Download className="w-4 h-4" /> Export PDF
               </button>
             </>
           )}
-          
+
           {isEditMode && (
             <>
               <button
                 onClick={handleCancelEdit}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 flex items-center gap-2"
+                className="px-3 py-1.5 bg-black/20 text-white rounded hover:bg-black/30 transition-colors flex items-center gap-2 text-sm"
               >
-                <X className="w-4 h-4" />
-                Cancel
+                <X className="w-4 h-4" /> Cancel
               </button>
               <button
                 onClick={handleSaveChanges}
-                className="px-4 py-2 bg-white text-[#EA0029] rounded hover:bg-gray-100 flex items-center gap-2"
+                className="px-3 py-1.5 bg-white text-[#EA0029] font-bold rounded hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm shadow-sm"
               >
-                <Save className="w-4 h-4" />
-                Save Changes
+                <Save className="w-4 h-4" /> Save Changes
               </button>
             </>
           )}
         </div>
       </div>
 
-      {/* Controls Section - Sticky */}
+      {/* 2. Controls Section */}
       {scheduleExists && (
-        <div className="bg-white border-x border-b border-gray-200 px-6 py-4 sticky top-[52px] z-30 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0 shadow-sm z-30">
+          <div className="flex items-center justify-between gap-4 mb-3">
             {/* Week Navigation */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleWeekNavigation('prev')}
-                  disabled={!canGoPrevious}
-                  className={`p-2 rounded ${
-                    canGoPrevious
-                      ? 'hover:bg-gray-100 text-gray-700'
-                      : 'text-gray-300 cursor-not-allowed'
-                  }`}
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                
-                <span className="text-sm min-w-[200px] text-center">
-                  {weekDisplay}
-                </span>
-                
-                <button
-                  onClick={() => handleWeekNavigation('next')}
-                  disabled={!canGoNext}
-                  className={`p-2 rounded ${
-                    canGoNext
-                      ? 'hover:bg-gray-100 text-gray-700'
-                      : 'text-gray-300 cursor-not-allowed'
-                  }`}
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            
-            {/* Legend - Fixed Position */}
-            <ShiftLegend />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            {/* Filter & Actions */}
-            <div className="flex items-center gap-4 flex-1">
-              {/* Advanced Filter Combobox */}
-              <FilterCombobox
-                departments={filterOptions.departments}
-                designations={filterOptions.designations}
-                staffNames={filterOptions.staffNames}
-                selectedFilters={selectedFilters}
-                onFilterChange={setSelectedFilters}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleWeekNavigation('prev')}
+                disabled={!canGoPrevious}
+                className={`p-2 rounded ${
+                  canGoPrevious
+                    ? 'hover:bg-gray-100 text-gray-700'
+                    : 'text-gray-300 cursor-not-allowed'
+                }`}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              
+              <span className="text-sm min-w-[280px] text-center font-medium">
+                {weekDisplay}
+              </span>
+              
+              <button
+                onClick={() => handleWeekNavigation('next')}
+                disabled={!canGoNext}
+                className={`p-2 rounded ${
+                  canGoNext
+                    ? 'hover:bg-gray-100 text-gray-700'
+                    : 'text-gray-300 cursor-not-allowed'
+                }`}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+
+              {/* Month Selector */}
+              <MonthYearPicker
+                selectedMonth={selectedMonth}
+                onChange={handleMonthChange}
               />
             </div>
-            
-            <div className="h-6 w-px bg-gray-300" />
-            
-            <MonthYearPicker
-              selectedMonth={selectedMonth}
-              onChange={handleMonthChange}
-            />
           </div>
 
-          {isEditMode && <Legend />}
+          {/* Filter */}
+          <div className="flex items-center gap-4">
+            <FilterCombobox
+              departments={filterOptions.departments}
+              designations={filterOptions.designations}
+              staffNames={filterOptions.staffNames}
+              selectedFilters={selectedFilters}
+              onFilterChange={setSelectedFilters}
+            />
+          </div>
         </div>
       )}
 
-      {/* Content */}
-      <div className="bg-white border border-gray-200 border-t-0 rounded-b">
+      {/* 3. Content */}
+      <div className="flex-1 overflow-hidden relative flex flex-col">
         {!scheduleExists ? (
-          <EmptyState
-            month={monthYearDisplay}
-            onCreateSchedule={handleCreateSchedule}
-            isCreating={isCreating}
-          />
+          <div className="h-full overflow-auto">
+            <EmptyState
+              month={monthYearDisplay}
+              onCreateSchedule={handleCreateSchedule}
+              isCreating={isCreating}
+            />
+          </div>
         ) : (
           <ScheduleGrid
             weekDates={currentWeekDates}
@@ -345,12 +339,17 @@ export function ScheduleView({
         )}
       </div>
 
-      {/* Bottom Legend (when not in edit mode) */}
-      {scheduleExists && !isEditMode && (
-        <div className="mt-4">
-          <Legend />
-        </div>
-      )}
+      {/* 4. Footer Legend */}
+      {scheduleExists && <ShiftLegend />}
+
+      {/* 5. Modals */}
+      <ExportPreviewDialog
+        open={isExportDialogOpen}
+        onOpenChange={setIsExportDialogOpen}
+        data={filteredScheduleData}
+        month={selectedMonth}
+        onConfirm={handleConfirmExport}
+      />
     </div>
   );
 }

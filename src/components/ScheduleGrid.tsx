@@ -1,6 +1,21 @@
-import { ChevronDown } from 'lucide-react';
-import { Fragment } from 'react';
-import { isSameDay } from '../utils/dateHelpers';
+import { Fragment } from "react";
+import { isSameDay } from "../utils/dateHelpers";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "./ui/popover";
+import { Label } from "./ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Button } from "./ui/button";
+import { X, Plus } from "lucide-react";
+import { cn } from "./ui/utils";
 
 interface ScheduleEntry {
   id: string;
@@ -9,8 +24,8 @@ interface ScheduleEntry {
   staffName: string;
   schedule: {
     [date: string]: {
-      attendance: 'Present' | 'Absent';
-      shift: 'Morning' | 'Afternoon' | 'Night' | 'Evening' | 'All Day';
+      attendance: "Present" | "Absent";
+      shifts: string[];
     };
   };
 }
@@ -24,29 +39,130 @@ interface ScheduleGridProps {
   selectedMonth: Date;
 }
 
-export function ScheduleGrid({ weekDates, scheduleData, setScheduleData, isEditMode, hasActiveFilters, selectedMonth }: ScheduleGridProps) {
+const getShiftStyle = (shift: string) => {
+  switch (shift) {
+    case "Morning":
+      return {
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      };
+    case "Middle":
+      return {
+        bg: "bg-teal-50",
+        text: "text-teal-700",
+        border: "border-teal-200",
+      };
+    case "Afternoon":
+      return {
+        bg: "bg-orange-50",
+        text: "text-orange-700",
+        border: "border-orange-200",
+      };
+    case "Night":
+      return {
+        bg: "bg-indigo-50",
+        text: "text-indigo-700",
+        border: "border-indigo-200",
+      };
+    case "All Day":
+      return {
+        bg: "bg-slate-100",
+        text: "text-slate-700",
+        border: "border-slate-200",
+      };
+    default:
+      return {
+        bg: "bg-gray-50",
+        text: "text-gray-600",
+        border: "border-gray-200",
+      };
+  }
+};
+
+/**
+ * Renders the content of a schedule cell.
+ * Requirement 1: Vertical alignment (flex-col) and consistent height (h-6 per shift).
+ */
+function CellContent({
+  attendance,
+  shifts,
+  isEditMode,
+}: {
+  attendance: string;
+  shifts: string[];
+  isEditMode: boolean;
+}) {
+  const isAbsent = attendance === "Absent";
+
+  if (isAbsent) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center w-full h-full min-h-[60px] rounded-sm transition-all",
+          "bg-red-50/50 border border-red-100 text-red-400 text-xs font-medium",
+          isEditMode &&
+            "cursor-pointer hover:ring-2 hover:ring-[#EA0029] hover:z-10",
+        )}
+      >
+        OFF
+      </div>
+    );
+  }
+
+  // Present with Shifts
+  return (
+    <div
+      className={cn(
+        "w-full h-full min-h-[60px] p-1 flex flex-col gap-1 transition-all relative",
+        isEditMode &&
+          "cursor-pointer hover:ring-2 hover:ring-[#EA0029] hover:z-10 rounded bg-white shadow-sm",
+      )}
+    >
+      {shifts.map((shift, idx) => {
+        const style = getShiftStyle(shift);
+        return (
+          <div
+            key={idx}
+            className={cn(
+              "w-full h-6 flex items-center justify-center rounded-[3px] text-[11px] font-medium border truncate px-1",
+              style.bg,
+              style.text,
+              style.border,
+            )}
+            title={shift}
+          >
+            {shift}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ScheduleGrid({
+  weekDates,
+  scheduleData,
+  setScheduleData,
+  isEditMode,
+  hasActiveFilters,
+  selectedMonth,
+}: ScheduleGridProps) {
   const today = new Date();
-  
-  // Check if a date is in the current selected month
+
   const isDateInMonth = (date: Date) => {
-    return date.getMonth() === selectedMonth.getMonth() && 
-           date.getFullYear() === selectedMonth.getFullYear();
-  };
-  
-  const attendanceColors = {
-    'Present': 'border-green-500 text-green-700 bg-green-50',
-    'Absent': 'border-red-500 text-red-700 bg-red-50',
+    return (
+      date.getMonth() === selectedMonth.getMonth() &&
+      date.getFullYear() === selectedMonth.getFullYear()
+    );
   };
 
-  const shiftColors = {
-    'Morning': 'border-yellow-500 text-yellow-700 bg-yellow-50',
-    'Afternoon': 'border-orange-500 text-orange-700 bg-orange-50',
-    'Night': 'border-purple-500 text-purple-700 bg-purple-50',
-    'Evening': 'border-orange-500 text-orange-700 bg-orange-50',
-    'All Day': 'border-gray-500 text-gray-700 bg-gray-50',
-  };
-
-  const handleAttendanceChange = (staffId: string, date: string, value: string) => {
+  // --- Handlers ---
+  const updateAttendance = (
+    staffId: string,
+    dateKey: string,
+    val: string,
+  ) => {
     setScheduleData(
       scheduleData.map((staff) =>
         staff.id === staffId
@@ -54,266 +170,411 @@ export function ScheduleGrid({ weekDates, scheduleData, setScheduleData, isEditM
               ...staff,
               schedule: {
                 ...staff.schedule,
-                [date]: {
-                  ...staff.schedule[date],
-                  attendance: value as any,
+                [dateKey]: {
+                  ...staff.schedule[dateKey],
+                  attendance: val as any,
                 },
               },
             }
-          : staff
-      )
+          : staff,
+      ),
     );
   };
 
-  const handleShiftChange = (staffId: string, date: string, value: string) => {
+  const updateShift = (
+    staffId: string,
+    dateKey: string,
+    index: number,
+    val: string,
+  ) => {
     setScheduleData(
-      scheduleData.map((staff) =>
-        staff.id === staffId
-          ? {
-              ...staff,
-              schedule: {
-                ...staff.schedule,
-                [date]: {
-                  ...staff.schedule[date],
-                  shift: value as any,
-                },
-              },
-            }
-          : staff
-      )
+      scheduleData.map((staff) => {
+        if (staff.id !== staffId) return staff;
+        const currentShifts = [
+          ...staff.schedule[dateKey].shifts,
+        ];
+        currentShifts[index] = val;
+        return {
+          ...staff,
+          schedule: {
+            ...staff.schedule,
+            [dateKey]: {
+              ...staff.schedule[dateKey],
+              shifts: currentShifts,
+            },
+          },
+        };
+      }),
     );
   };
 
-  // Group staff by department
-  const groupedStaff = scheduleData.reduce((acc, staff) => {
-    if (!acc[staff.department]) {
-      acc[staff.department] = [];
-    }
-    acc[staff.department].push(staff);
-    return acc;
-  }, {} as { [key: string]: ScheduleEntry[] });
+  const addShift = (staffId: string, dateKey: string) => {
+    setScheduleData(
+      scheduleData.map((staff) => {
+        if (staff.id !== staffId) return staff;
+        const currentShifts = [
+          ...staff.schedule[dateKey].shifts,
+        ];
+        currentShifts.push("Morning");
+        return {
+          ...staff,
+          schedule: {
+            ...staff.schedule,
+            [dateKey]: {
+              ...staff.schedule[dateKey],
+              shifts: currentShifts,
+            },
+          },
+        };
+      }),
+    );
+  };
+
+  const removeShift = (
+    staffId: string,
+    dateKey: string,
+    index: number,
+  ) => {
+    setScheduleData(
+      scheduleData.map((staff) => {
+        if (staff.id !== staffId) return staff;
+        const currentShifts = staff.schedule[
+          dateKey
+        ].shifts.filter((_, i) => i !== index);
+        return {
+          ...staff,
+          schedule: {
+            ...staff.schedule,
+            [dateKey]: {
+              ...staff.schedule[dateKey],
+              shifts: currentShifts,
+            },
+          },
+        };
+      }),
+    );
+  };
+
+  const groupedStaff = scheduleData.reduce(
+    (acc, staff) => {
+      if (!acc[staff.department]) acc[staff.department] = [];
+      acc[staff.department].push(staff);
+      return acc;
+    },
+    {} as { [key: string]: ScheduleEntry[] },
+  );
 
   const departments = Object.keys(groupedStaff).sort();
 
   return (
-    <div className="overflow-x-auto">
+    <div className="w-full h-full overflow-auto bg-white">
       {scheduleData.length === 0 && hasActiveFilters ? (
-        <div className="py-12 text-center text-gray-500">
-          <p>No staff found matching the selected filters</p>
-          <p className="text-sm mt-2">Try selecting different departments, designations, or staff names</p>
+        <div className="flex flex-col items-center justify-center h-full text-gray-500 py-12">
+          <p className="text-xl font-medium">
+            No staff found matching filters
+          </p>
         </div>
       ) : (
-        <>
-          {/* Filter summary */}
-          {hasActiveFilters && (
-            <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 text-sm text-blue-700">
-              Showing {scheduleData.length} staff member{scheduleData.length !== 1 ? 's' : ''} matching selected filters
-            </div>
-          )}
-          
-          <table className="w-full relative" style={{ tableLayout: 'fixed' }}>
-            <thead className="sticky top-[160px] z-20 bg-white shadow-sm">
-              <tr className="bg-white border-b border-gray-200">
-                <th className="sticky left-0 z-30 bg-white px-4 py-3 text-left text-xs text-gray-600 w-64 border-r-2 border-gray-300">
-                  <div>Staff Information</div>
-                </th>
-                {weekDates.map((date) => {
-                  const isToday = isSameDay(date, today);
-                  const isInMonth = isDateInMonth(date);
-                  
-                  return (
-                    <th 
-                      key={date.toISOString()} 
-                      className={`px-2 py-3 text-center text-xs bg-white border-b ${
-                        isToday && isInMonth
-                          ? 'border-b-[3px] border-b-[#EA0029]'
-                          : 'border-b-gray-200'
-                      }`}
-                      colSpan={2}
-                    >
-                      <div className={`text-xs ${
-                        !isInMonth 
-                          ? 'text-gray-400' 
-                          : isToday 
-                            ? 'text-[#EA0029]'
-                            : 'text-gray-900'
-                      }`}>
-                        <div className={isToday && isInMonth ? 'flex items-center justify-center gap-1' : ''}>
-                          {isToday && isInMonth && <span className="w-1.5 h-1.5 rounded-full bg-[#EA0029]"></span>}
-                          <span className={isToday && isInMonth ? 'font-bold' : ''}>{date.getDate()}</span>
-                        </div>
-                      </div>
-                      <div className={`text-xs ${
-                        !isInMonth 
-                          ? 'text-gray-400' 
-                          : isToday 
-                            ? 'text-[#EA0029] font-bold'
-                            : 'text-gray-600'
-                      }`}>
-                        {date.toLocaleDateString('en-US', { weekday: 'short' })}
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="sticky left-0 z-30 bg-gray-50 px-4 py-2 text-left text-xs text-gray-600 border-r-2 border-gray-300">
-                  <div className="text-xs">Department / Designation / Name</div>
-                </th>
-                {weekDates.map((date) => {
-                  const isToday = isSameDay(date, today);
-                  const isInMonth = isDateInMonth(date);
-                  
-                  return (
-                    <Fragment key={date.toISOString()}>
-                      <th className={`px-2 py-2 text-center text-xs min-w-[70px] transition-colors ${
-                        !isInMonth
-                          ? 'bg-[#F5F5F5] text-gray-400'
-                          : isToday 
-                            ? 'bg-red-50 text-[#EA0029]' 
-                            : 'text-gray-600'
-                      }`}>
-                        Attendance
-                      </th>
-                      <th className={`px-2 py-2 text-center text-xs min-w-[70px] transition-colors ${
-                        !isInMonth
-                          ? 'bg-[#F5F5F5] text-gray-400'
-                          : isToday 
-                            ? 'bg-red-50 text-[#EA0029]' 
-                            : 'text-gray-600'
-                      }`}>
-                        Shift
-                      </th>
-                    </Fragment>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {departments.map((department) => (
-                <Fragment key={department}>
-                  {groupedStaff[department].map((staff, idx) => {
-                    const isFirstInGroup = idx === 0;
-                    
-                    return (
-                      <tr 
-                        key={staff.id} 
-                        className={`border-b border-gray-200 ${
-                          isFirstInGroup ? 'border-t-2 border-t-gray-400' : ''
-                        } ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                      >
-                        <td className={`sticky left-0 z-10 bg-inherit px-4 py-3 text-sm border-r-2 border-gray-300 ${
-                          isFirstInGroup ? 'border-t-2 border-t-gray-400' : ''
-                        }`}>
-                          {isFirstInGroup && (
-                            <div className="text-xs text-[#EA0029] mb-2 uppercase tracking-wide">
-                              {department}
-                            </div>
-                          )}
-                          <div className="text-gray-900">{staff.staffName}</div>
-                          <div className="text-xs text-gray-500">{staff.designation}</div>
-                        </td>
-                        {weekDates.map((date) => {
-                          const dateKey = date.toISOString().split('T')[0];
-                          const entry = staff.schedule[dateKey];
-                          const isToday = isSameDay(date, today);
-                          const isInMonth = isDateInMonth(date);
-                          
-                          // Ghost cells for dates outside the selected month
-                          if (!isInMonth) {
-                            return (
-                              <Fragment key={dateKey}>
-                                <td 
-                                  className="px-2 py-3 bg-[#F5F5F5] cursor-default"
-                                  style={{
-                                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,.03) 10px, rgba(0,0,0,.03) 20px)',
-                                  }}
-                                >
-                                  {/* Completely empty - no content */}
-                                </td>
-                                <td 
-                                  className="px-2 py-3 bg-[#F5F5F5] cursor-default"
-                                  style={{
-                                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,.03) 10px, rgba(0,0,0,.03) 20px)',
-                                  }}
-                                >
-                                  {/* Completely empty - no content */}
-                                </td>
-                              </Fragment>
-                            );
-                          }
-                          
-                          if (!entry) {
-                            return (
-                              <Fragment key={dateKey}>
-                                <td className={`px-2 py-3 transition-colors ${
-                                  isToday ? 'bg-red-50/50' : ''
-                                }`} />
-                                <td className={`px-2 py-3 transition-colors ${
-                                  isToday ? 'bg-red-50/50' : ''
-                                }`} />
-                              </Fragment>
-                            );
-                          }
+        <table
+          className="w-full border-collapse"
+          style={{ tableLayout: "fixed" }}
+        >
+          <thead className="sticky top-0 z-20 bg-white shadow-sm ring-1 ring-gray-100">
+            <tr className="bg-white border-b border-gray-200 h-16">
+              <th className="sticky left-0 z-30 top-0 bg-gray-50/80 backdrop-blur px-6 py-4 text-left w-72 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)]">
+                <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Staff Details
+                </div>
+              </th>
+              {weekDates.map((date) => {
+                const isToday = isSameDay(date, today);
+                const isInMonth = isDateInMonth(date);
 
-                          return (
-                            <Fragment key={dateKey}>
-                              <td className={`px-2 py-3 transition-colors ${
-                                isToday ? 'bg-red-50/50' : ''
-                              }`}>
-                                {isEditMode ? (
-                                  <div className="relative">
-                                    <select
-                                      value={entry.attendance}
-                                      onChange={(e) => handleAttendanceChange(staff.id, dateKey, e.target.value)}
-                                      className={`w-full px-3 py-1.5 pr-8 text-xs rounded border appearance-none cursor-pointer ${attendanceColors[entry.attendance]}`}
-                                    >
-                                      <option value="Present">Present</option>
-                                      <option value="Absent">Absent</option>
-                                    </select>
-                                    <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                  </div>
-                                ) : (
-                                  <div className={`px-3 py-1.5 text-xs rounded border text-center ${attendanceColors[entry.attendance]}`}>
-                                    {entry.attendance}
-                                  </div>
-                                )}
-                              </td>
-                              <td className={`px-2 py-3 transition-colors ${
-                                isToday ? 'bg-red-50/50' : ''
-                              }`}>
-                                {isEditMode ? (
-                                  <div className="relative">
-                                    <select
-                                      value={entry.shift}
-                                      onChange={(e) => handleShiftChange(staff.id, dateKey, e.target.value)}
-                                      className={`w-full px-3 py-1.5 pr-8 text-xs rounded border appearance-none cursor-pointer ${shiftColors[entry.shift]}`}
-                                    >
-                                      <option value="Morning">Morning</option>
-                                      <option value="Afternoon">Afternoon</option>
-                                      <option value="Evening">Evening</option>
-                                      <option value="Night">Night</option>
-                                      <option value="All Day">All Day</option>
-                                    </select>
-                                    <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                  </div>
-                                ) : (
-                                  <div className={`px-3 py-1.5 text-xs rounded border text-center ${shiftColors[entry.shift]}`}>
-                                    {entry.shift}
-                                  </div>
-                                )}
-                              </td>
-                            </Fragment>
-                          );
+                return (
+                  <th
+                    key={date.toISOString()}
+                    // Requirement 2: Subtle Highlight (No heavy background/borders)
+                    className={cn(
+                      "px-2 py-3 text-center border-b border-r border-gray-100 min-w-[110px]",
+                      !isInMonth && "bg-gray-50/50",
+                    )}
+                  >
+                    <div className="flex flex-col items-center justify-center gap-1.5">
+                      <div
+                        className={cn(
+                          "w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-colors",
+                          isToday
+                            ? "bg-[#EA0029] text-white shadow-sm" // Requirement 2: Clean Circle Highlight
+                            : isInMonth
+                              ? "text-gray-900"
+                              : "text-gray-400",
+                        )}
+                      >
+                        {date.getDate()}
+                      </div>
+                      <div
+                        className={cn(
+                          "text-[10px] uppercase font-semibold tracking-wider",
+                          isToday
+                            ? "text-[#EA0029]"
+                            : isInMonth
+                              ? "text-gray-500"
+                              : "text-gray-300",
+                        )}
+                      >
+                        {date.toLocaleDateString("en-US", {
+                          weekday: "short",
                         })}
-                      </tr>
-                    );
-                  })}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </>
+                      </div>
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+
+          <tbody className="bg-white">
+            {departments.map((department) => (
+              <Fragment key={department}>
+                {groupedStaff[department].map((staff, idx) => {
+                  const isFirstInGroup = idx === 0;
+                  return (
+                    <tr
+                      key={staff.id}
+                      className={cn(
+                        "group hover:bg-gray-50/80 transition-colors",
+                        isFirstInGroup
+                          ? "border-t border-gray-200"
+                          : "border-t border-gray-100",
+                      )}
+                    >
+                      {/* Name Column - Sticky */}
+                      <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50/80 px-6 py-4 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] align-top">
+                        {isFirstInGroup && (
+                          <div className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-2.5">
+                            {department}
+                          </div>
+                        )}
+                        <div className="font-semibold text-sm text-gray-900 leading-tight">
+                          {staff.staffName}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 font-medium">
+                          {staff.designation}
+                        </div>
+                      </td>
+
+                      {/* Schedule Cells */}
+                      {weekDates.map((date) => {
+                        const dateKey = date
+                          .toISOString()
+                          .split("T")[0];
+                        const entry = staff.schedule[dateKey];
+                        const isToday = isSameDay(date, today);
+                        const isInMonth = isDateInMonth(date);
+
+                        // Ghost cell
+                        if (!isInMonth) {
+                          return (
+                            <td
+                              key={dateKey}
+                              className="bg-gray-50/30 border-r border-gray-100"
+                            >
+                              <div className="w-full h-full min-h-[80px]" />
+                            </td>
+                          );
+                        }
+
+                        if (!entry)
+                          return (
+                            <td
+                              key={dateKey}
+                              className="border-r border-gray-100"
+                            />
+                          );
+
+                        return (
+                          <td
+                            key={dateKey}
+                            // Requirement 2: Subtle Body Highlight (Just border, no bg)
+                            className={cn(
+                              "p-1 align-top border-r border-gray-100",
+                              isToday
+                                ? "border-l border-l-red-100 border-r-red-100"
+                                : "",
+                            )}
+                          >
+                            {isEditMode ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <div
+                                    role="button"
+                                    tabIndex={0}
+                                    className="w-full h-full min-h-[80px] rounded hover:ring-1 hover:ring-gray-200"
+                                  >
+                                    <CellContent
+                                      attendance={
+                                        entry.attendance
+                                      }
+                                      shifts={entry.shifts}
+                                      isEditMode={true}
+                                    />
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 p-5 z-50 shadow-xl border-gray-200">
+                                  <div className="space-y-4">
+                                    <div className="font-bold text-base text-gray-900 pb-2 border-b flex justify-between items-center">
+                                      <span>Edit Schedule</span>
+                                      <span className="text-sm font-normal text-gray-500">
+                                        {date.toLocaleDateString()}
+                                      </span>
+                                    </div>
+
+                                    {/* Availability */}
+                                    <div className="space-y-2">
+                                      <Label className="text-xs font-bold text-gray-600 uppercase">
+                                        Status
+                                      </Label>
+                                      <Select
+                                        defaultValue={
+                                          entry.attendance
+                                        }
+                                        onValueChange={(val) =>
+                                          updateAttendance(
+                                            staff.id,
+                                            dateKey,
+                                            val,
+                                          )
+                                        }
+                                      >
+                                        <SelectTrigger className="h-9 text-sm">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Present">
+                                            On Duty (Present)
+                                          </SelectItem>
+                                          <SelectItem value="Absent">
+                                            Off Duty (Absent)
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    {/* Shift Configuration */}
+                                    {entry.attendance ===
+                                      "Present" && (
+                                      <div className="space-y-3 pt-2">
+                                        <div className="flex items-center justify-between">
+                                          <Label className="text-xs font-bold text-gray-600 uppercase">
+                                            Shifts
+                                          </Label>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 text-xs text-[#EA0029] hover:text-[#c40023] hover:bg-red-50 px-2 font-medium"
+                                            onClick={() =>
+                                              addShift(
+                                                staff.id,
+                                                dateKey,
+                                              )
+                                            }
+                                          >
+                                            <Plus className="w-3 h-3 mr-1" />{" "}
+                                            Add Shift
+                                          </Button>
+                                        </div>
+
+                                        <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto">
+                                          {entry.shifts.map(
+                                            (shift, i) => (
+                                              <div
+                                                key={i}
+                                                className="flex gap-2 items-center"
+                                              >
+                                                <div className="w-6 text-xs text-gray-400 font-bold">
+                                                  #{i + 1}
+                                                </div>
+                                                <Select
+                                                  value={shift}
+                                                  onValueChange={(
+                                                    val,
+                                                  ) =>
+                                                    updateShift(
+                                                      staff.id,
+                                                      dateKey,
+                                                      i,
+                                                      val,
+                                                    )
+                                                  }
+                                                >
+                                                  <SelectTrigger className="h-9 flex-1 text-sm">
+                                                    <SelectValue />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    <SelectItem value="Morning">
+                                                      Morning
+                                                    </SelectItem>
+                                                    <SelectItem value="Middle">
+                                                      Middle
+                                                    </SelectItem>
+                                                    <SelectItem value="Afternoon">
+                                                      Afternoon
+                                                    </SelectItem>
+                                                    <SelectItem value="Night">
+                                                      Night
+                                                    </SelectItem>
+                                                    <SelectItem value="All Day">
+                                                      All Day
+                                                    </SelectItem>
+                                                  </SelectContent>
+                                                </Select>
+
+                                                {entry.shifts
+                                                  .length >
+                                                  1 && (
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-9 w-9 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                                    onClick={() =>
+                                                      removeShift(
+                                                        staff.id,
+                                                        dateKey,
+                                                        i,
+                                                      )
+                                                    }
+                                                  >
+                                                    <X className="w-4 h-4" />
+                                                  </Button>
+                                                )}
+                                              </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            ) : (
+                              <div className="w-full h-full min-h-[80px]">
+                                <CellContent
+                                  attendance={entry.attendance}
+                                  shifts={entry.shifts}
+                                  isEditMode={false}
+                                />
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

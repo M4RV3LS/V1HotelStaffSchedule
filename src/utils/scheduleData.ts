@@ -7,87 +7,150 @@ export interface ScheduleEntry {
   staffName: string;
   schedule: {
     [date: string]: {
-      attendance: 'Present' | 'Absent';
-      shift: 'Morning' | 'Afternoon' | 'Night' | 'Evening' | 'All Day';
+      attendance: "Present" | "Absent";
+      shifts: string[]; // Array of shifts
     };
   };
 }
 
 const staffList = [
-  // Front Desk Department
-  { department: 'Front Desk', designation: 'Manager', name: 'Sarah Johnson' },
-  { department: 'Front Desk', designation: 'Supervisor', name: 'Michelle Owen' },
-  { department: 'Front Desk', designation: 'Receptionist', name: 'Michael Clarke' },
-  { department: 'Front Desk', designation: 'Receptionist', name: 'Ricky Ponting' },
-  
-  // Housekeeping Department
-  { department: 'Housekeeping', designation: 'Supervisor', name: 'David Wilson' },
-  { department: 'Housekeeping', designation: 'Staff', name: 'Emily Davis' },
-  { department: 'Housekeeping', designation: 'Staff', name: 'Maria Garcia' },
-  { department: 'Housekeeping', designation: 'Staff', name: 'Anna Rodriguez' },
-  
-  // Kitchen Department
-  { department: 'Kitchen', designation: 'Head Chef', name: 'Michelle Johns' },
-  { department: 'Kitchen', designation: 'Sous Chef', name: 'James Miller' },
-  { department: 'Kitchen', designation: 'Cook', name: 'Linda Martinez' },
-  
-  // Maintenance Department
-  { department: 'Maintenance', designation: 'Technician', name: 'Robert Brown' },
-  { department: 'Maintenance', designation: 'Assistant', name: 'William Lee' },
+  {
+    department: "Front Desk",
+    designation: "Manager",
+    name: "Sarah Johnson",
+  },
+  {
+    department: "Front Desk",
+    designation: "Supervisor",
+    name: "Michelle Owen",
+  },
+  {
+    department: "Front Desk",
+    designation: "Receptionist",
+    name: "Michael Clarke",
+  },
+  {
+    department: "Front Desk",
+    designation: "Receptionist",
+    name: "Ricky Ponting",
+  },
+  {
+    department: "Housekeeping",
+    designation: "Supervisor",
+    name: "David Wilson",
+  },
+  {
+    department: "Housekeeping",
+    designation: "Staff",
+    name: "Emily Davis",
+  },
+  {
+    department: "Housekeeping",
+    designation: "Staff",
+    name: "Maria Garcia",
+  },
+  {
+    department: "Housekeeping",
+    designation: "Staff",
+    name: "Anna Rodriguez",
+  },
+  {
+    department: "Kitchen",
+    designation: "Head Chef",
+    name: "Michelle Johns",
+  },
+  {
+    department: "Kitchen",
+    designation: "Sous Chef",
+    name: "James Miller",
+  },
+  {
+    department: "Kitchen",
+    designation: "Cook",
+    name: "Linda Martinez",
+  },
+  {
+    department: "Maintenance",
+    designation: "Technician",
+    name: "Robert Brown",
+  },
 ];
 
-// Designation hierarchy for sorting
 const designationOrder: { [key: string]: number } = {
-  'Manager': 1,
-  'Head Chef': 2,
-  'Supervisor': 3,
-  'Sous Chef': 4,
-  'Technician': 5,
-  'Receptionist': 6,
-  'Cook': 7,
-  'Staff': 8,
-  'Assistant': 9,
+  Manager: 1,
+  "Head Chef": 2,
+  Supervisor: 3,
+  "Sous Chef": 4,
+  Technician: 5,
+  Receptionist: 6,
+  Cook: 7,
+  Staff: 8,
+  Assistant: 9,
 };
 
-const attendanceOptions: Array<'Present' | 'Absent'> = [
-  'Present', 'Absent'
+// Requirement 4: Predefined shifts
+const shiftOptions = [
+  "Morning",
+  "Middle",
+  "Afternoon",
+  "Night",
+  "All Day",
 ];
 
-const shiftOptions: Array<'Morning' | 'Afternoon' | 'Night' | 'Evening' | 'All Day'> = [
-  'Morning', 'Afternoon', 'Night', 'Evening', 'All Day'
-];
-
-export function generateMockScheduleData(month: Date): ScheduleEntry[] {
+export function generateMockScheduleData(
+  month: Date,
+): ScheduleEntry[] {
   const year = month.getFullYear();
   const monthIndex = month.getMonth();
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const daysInMonth = new Date(
+    year,
+    monthIndex + 1,
+    0,
+  ).getDate();
 
-  // Sort staff by department first, then by designation
   const sortedStaff = [...staffList].sort((a, b) => {
-    // First sort by department
-    if (a.department !== b.department) {
+    if (a.department !== b.department)
       return a.department.localeCompare(b.department);
-    }
-    // Then sort by designation hierarchy
-    const orderA = designationOrder[a.designation] || 999;
-    const orderB = designationOrder[b.designation] || 999;
-    return orderA - orderB;
+    return (
+      (designationOrder[a.designation] || 999) -
+      (designationOrder[b.designation] || 999)
+    );
   });
 
   return sortedStaff.map((staff, idx) => {
-    const schedule: ScheduleEntry['schedule'] = {};
+    const schedule: ScheduleEntry["schedule"] = {};
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, monthIndex, day);
-      const dateKey = date.toISOString().split('T')[0];
-      
-      // Create predictable but varied patterns
-      const attendanceIndex = (idx + day) % attendanceOptions.length;
-      const shiftIndex = (idx * 2 + day) % shiftOptions.length;
+      const dateKey = date.toISOString().split("T")[0];
+
+      const attendance =
+        Math.random() > 0.15 ? "Present" : "Absent";
+      const shifts: string[] = [];
+
+      if (attendance === "Present") {
+        // Base shift
+        const shiftIndex = (idx + day) % shiftOptions.length;
+        shifts.push(shiftOptions[shiftIndex]);
+
+        // Requirement 1: Support > 2 shifts (Randomly add 2nd and 3rd shift)
+        if (Math.random() > 0.85 && shifts[0] !== "All Day") {
+          const secondShiftIndex =
+            (shiftIndex + 1) % (shiftOptions.length - 1);
+          shifts.push(shiftOptions[secondShiftIndex]);
+
+          // Occasional 3rd shift
+          if (Math.random() > 0.8) {
+            const thirdShiftIndex =
+              (shiftIndex + 2) % (shiftOptions.length - 1);
+            shifts.push(shiftOptions[thirdShiftIndex]);
+          }
+        }
+      }
 
       schedule[dateKey] = {
-        attendance: attendanceOptions[attendanceIndex],
-        shift: shiftOptions[shiftIndex],
+        attendance,
+        shifts: shifts.sort(), // Sort for consistency
       };
     }
 
@@ -101,25 +164,6 @@ export function generateMockScheduleData(month: Date): ScheduleEntry[] {
   });
 }
 
-// Determine if schedule exists for a given month
 export function hasScheduleForMonth(month: Date): boolean {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-  
-  const selectedYear = month.getFullYear();
-  const selectedMonth = month.getMonth();
-
-  // Has schedule for current month and previous months in current year
-  if (selectedYear === currentYear && selectedMonth <= currentMonth) {
-    return true;
-  }
-  
-  // Has schedule for all months in previous years
-  if (selectedYear < currentYear) {
-    return true;
-  }
-
-  // No schedule for future months
-  return false;
+  return true;
 }
