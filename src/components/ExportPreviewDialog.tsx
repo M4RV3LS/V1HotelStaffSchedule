@@ -9,6 +9,9 @@ import {
 import { Button } from "./ui/button";
 import { FileText, Printer, Check } from "lucide-react";
 import { ScheduleEntry } from "../utils/scheduleData";
+import { CellContent } from "./ScheduleGrid";
+import { Fragment, useMemo } from "react";
+import { cn } from "./ui/utils";
 
 interface ExportPreviewDialogProps {
   open: boolean;
@@ -30,9 +33,35 @@ export function ExportPreviewDialog({
     year: "numeric",
   });
 
+  // Requirement 1: Generate all dates for the entire month
+  const monthDates = useMemo(() => {
+    const year = month.getFullYear();
+    const monthIndex = month.getMonth();
+    const daysInMonth = new Date(
+      year,
+      monthIndex + 1,
+      0,
+    ).getDate();
+    return Array.from(
+      { length: daysInMonth },
+      (_, i) => new Date(year, monthIndex, i + 1),
+    );
+  }, [month]);
+
+  const groupedStaff = data.reduce(
+    (acc, staff) => {
+      if (!acc[staff.department]) acc[staff.department] = [];
+      acc[staff.department].push(staff);
+      return acc;
+    },
+    {} as { [key: string]: ScheduleEntry[] },
+  );
+
+  const departments = Object.keys(groupedStaff).sort();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[95vw] w-full max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#EA0029]" />
@@ -41,81 +70,153 @@ export function ExportPreviewDialog({
           <DialogDescription>
             Previewing the printable document for{" "}
             <span className="font-semibold text-foreground">
-              {monthName}
+              {monthName} (Full Month)
             </span>
             .
           </DialogDescription>
         </DialogHeader>
 
-        {/* PDF Document Preview Mock */}
-        <div className="flex-1 bg-gray-100 p-8 rounded-lg overflow-auto border border-gray-200">
-          <div className="bg-white shadow-lg mx-auto max-w-[800px] min-h-[600px] p-10 flex flex-col gap-6 text-gray-900 origin-top">
-            {/* Document Header */}
-            <div className="flex items-center justify-between border-b-2 border-[#EA0029] pb-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Staff Schedule
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  Generated on {new Date().toLocaleDateString()}
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="text-xl font-bold text-[#EA0029]">
-                  RedPartners
+        {/* PDF Document Preview Area */}
+        <div className="flex-1 bg-gray-100 p-8 rounded-lg overflow-hidden border border-gray-200 flex flex-col">
+          <div className="bg-white shadow-lg mx-auto w-full h-full flex flex-col text-gray-900 origin-top overflow-hidden">
+            <div className="p-8 pb-4 shrink-0">
+              {/* Document Header */}
+              <div className="flex items-center justify-between border-b-2 border-[#EA0029] pb-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Staff Schedule
+                  </h1>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Generated on{" "}
+                    {new Date().toLocaleDateString()}
+                  </p>
                 </div>
-                <div className="text-sm text-gray-500">
-                  {monthName}
+                <div className="text-right">
+                  <div className="text-xl font-bold text-[#EA0029]">
+                    RedPartners
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {monthName}
+                  </div>
+                </div>
+              </div>
+
+              {/* Document Stats */}
+              <div className="grid grid-cols-3 gap-4 text-sm bg-gray-50 p-4 rounded border border-gray-100 mt-6">
+                <div>
+                  <span className="block text-gray-500 text-xs uppercase">
+                    Departments
+                  </span>
+                  <span className="font-semibold">
+                    {departments.length} Active
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-gray-500 text-xs uppercase">
+                    Total Staff
+                  </span>
+                  <span className="font-semibold">
+                    {data.length} Employees
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-gray-500 text-xs uppercase">
+                    Status
+                  </span>
+                  <span className="font-semibold text-green-600 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Finalized
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Document Stats */}
-            <div className="grid grid-cols-3 gap-4 text-sm bg-gray-50 p-4 rounded border border-gray-100">
-              <div>
-                <span className="block text-gray-500 text-xs uppercase">
-                  Departments
-                </span>
-                <span className="font-semibold">
-                  All Departments
-                </span>
-              </div>
-              <div>
-                <span className="block text-gray-500 text-xs uppercase">
-                  Total Staff
-                </span>
-                <span className="font-semibold">
-                  {data.length} Employees
-                </span>
-              </div>
-              <div>
-                <span className="block text-gray-500 text-xs uppercase">
-                  Status
-                </span>
-                <span className="font-semibold text-green-600 flex items-center gap-1">
-                  <Check className="w-3 h-3" /> Finalized
-                </span>
-              </div>
-            </div>
+            {/* REAL TABLE VISUAL - Scrollable for Full Month */}
+            <div className="flex-1 overflow-auto px-8 pb-8">
+              <div className="border border-gray-200 rounded min-w-max">
+                <table className="w-full border-collapse text-xs table-fixed">
+                  <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-4 py-2 text-left w-48 font-bold text-gray-600 border-r border-gray-200 bg-gray-100 sticky left-0 z-20">
+                        Staff
+                      </th>
+                      {monthDates.map((date) => (
+                        <th
+                          key={date.toISOString()}
+                          className="px-1 py-2 text-center border-r border-gray-200 font-semibold text-gray-600 w-20 min-w-[80px]"
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-[10px] uppercase text-gray-400">
+                              {date.toLocaleDateString(
+                                "en-US",
+                                { weekday: "short" },
+                              )}
+                            </span>
+                            <span>{date.getDate()}</span>
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {departments.map((department) => (
+                      <Fragment key={department}>
+                        {groupedStaff[department].map(
+                          (staff, idx) => (
+                            <tr
+                              key={staff.id}
+                              className="border-b border-gray-100 last:border-0"
+                            >
+                              <td className="px-4 py-2 border-r border-gray-200 align-top bg-white sticky left-0 z-10">
+                                {idx === 0 && (
+                                  <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">
+                                    {department}
+                                  </div>
+                                )}
+                                <div className="font-bold whitespace-nowrap">
+                                  {staff.staffName}
+                                </div>
+                                <div className="text-[10px] text-gray-500">
+                                  {staff.designation}
+                                </div>
+                              </td>
+                              {monthDates.map((date) => {
+                                const dateKey = date
+                                  .toISOString()
+                                  .split("T")[0];
+                                const entry =
+                                  staff.schedule[dateKey];
 
-            {/* Mock Table Visual */}
-            <div className="mt-4">
-              <div className="w-full h-8 bg-gray-200 mb-2 rounded-sm" />
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="flex gap-2 mb-2">
-                  <div className="w-1/4 h-6 bg-gray-100 rounded-sm" />
-                  <div className="w-3/4 h-6 bg-gray-50 border border-dashed border-gray-200 rounded-sm" />
-                </div>
-              ))}
-              <div className="text-center text-xs text-gray-400 mt-4 italic">
-                ... {data.length - 8} more rows ...
+                                return (
+                                  <td
+                                    key={dateKey}
+                                    className="p-1 border-r border-gray-200 align-top h-16 bg-white"
+                                  >
+                                    {entry ? (
+                                      <CellContent
+                                        attendance={
+                                          entry.attendance
+                                        }
+                                        shifts={entry.shifts}
+                                        isEditMode={false}
+                                      />
+                                    ) : null}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ),
+                        )}
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="mt-auto pt-8 border-t border-gray-200 flex justify-between text-xs text-gray-400">
+            <div className="mt-auto px-8 py-4 border-t border-gray-200 flex justify-between text-xs text-gray-400 shrink-0">
               <span>Confidential Document</span>
-              <span>Page 1 of 3</span>
+              <span>Page 1 of 1</span>
             </div>
           </div>
         </div>

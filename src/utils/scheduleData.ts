@@ -88,13 +88,11 @@ const designationOrder: { [key: string]: number } = {
   Assistant: 9,
 };
 
-// Requirement 4: Predefined shifts
 const shiftOptions = [
   "Morning",
   "Middle",
   "Afternoon",
   "Night",
-  "All Day",
 ];
 
 export function generateMockScheduleData(
@@ -129,28 +127,15 @@ export function generateMockScheduleData(
       const shifts: string[] = [];
 
       if (attendance === "Present") {
-        // Base shift
+        // Requirement 1: Default data is 1 shift only
+        // We assign a single shift based on a simple rotation or random selection
         const shiftIndex = (idx + day) % shiftOptions.length;
         shifts.push(shiftOptions[shiftIndex]);
-
-        // Requirement 1: Support > 2 shifts (Randomly add 2nd and 3rd shift)
-        if (Math.random() > 0.85 && shifts[0] !== "All Day") {
-          const secondShiftIndex =
-            (shiftIndex + 1) % (shiftOptions.length - 1);
-          shifts.push(shiftOptions[secondShiftIndex]);
-
-          // Occasional 3rd shift
-          if (Math.random() > 0.8) {
-            const thirdShiftIndex =
-              (shiftIndex + 2) % (shiftOptions.length - 1);
-            shifts.push(shiftOptions[thirdShiftIndex]);
-          }
-        }
       }
 
       schedule[dateKey] = {
         attendance,
-        shifts: shifts.sort(), // Sort for consistency
+        shifts: shifts,
       };
     }
 
@@ -165,5 +150,20 @@ export function generateMockScheduleData(
 }
 
 export function hasScheduleForMonth(month: Date): boolean {
+  // Requirement 1: Start from January 2026, schedule needs to be created manually
+  // This means hasScheduleForMonth returns false for >= Jan 2026
+  const cutoffDate = new Date(2026, 0, 1); // January 1, 2026
+
+  // We compare the first day of the selected month with the cutoff
+  const checkDate = new Date(
+    month.getFullYear(),
+    month.getMonth(),
+    1,
+  );
+
+  if (checkDate >= cutoffDate) {
+    return false;
+  }
+
   return true;
 }

@@ -22,11 +22,7 @@ export function ShiftLegend() {
       label: "Night",
       time: "22:00 - 06:00",
     },
-    {
-      color: "bg-slate-400 border-slate-500",
-      label: "All Day",
-      time: "Full Shift",
-    },
+    // Requirement: Removed "All Day"
     {
       color: "bg-red-500 border-red-600",
       label: "Off Duty",

@@ -3,10 +3,11 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { ScheduleView } from './components/ScheduleView';
 import { HistoryView } from './components/HistoryView';
+import { ReportView } from './components/ReportView';
 import { getWeekIndexForDate } from './utils/dateHelpers';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'schedule' | 'history'>('schedule');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'history' | 'reports'>('schedule');
   
   // Initialize with today's date and calculate the correct week
   const today = new Date();
@@ -45,6 +46,16 @@ function App() {
               >
                 History
               </button>
+              <button
+                onClick={() => setActiveTab('reports')}
+                className={`px-4 py-2 transition-colors ${
+                  activeTab === 'reports'
+                    ? 'border-b-2 border-[#EA0029] text-[#EA0029]'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Reports
+              </button>
             </div>
 
             {activeTab === 'schedule' ? (
@@ -56,8 +67,10 @@ function App() {
                 isEditMode={isEditMode}
                 setIsEditMode={setIsEditMode}
               />
-            ) : (
+            ) : activeTab === 'history' ? (
               <HistoryView selectedMonth={selectedMonth} />
+            ) : (
+              <ReportView selectedMonth={selectedMonth} />
             )}
           </div>
         </main>

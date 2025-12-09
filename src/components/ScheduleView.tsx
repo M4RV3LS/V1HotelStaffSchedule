@@ -1,9 +1,19 @@
-import { useState, useMemo } from "react";
-import { Download, Edit2, X, Save, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import {
+  Download,
+  Edit2,
+  X,
+  Save,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { ScheduleGrid } from "./ScheduleGrid";
 import { EmptyState } from "./EmptyState";
 import { ShiftLegend } from "./ScheduleControls";
-import { FilterCombobox, SelectedFilter } from "./FilterCombobox";
+import {
+  FilterCombobox,
+  SelectedFilter,
+} from "./FilterCombobox";
 import { MonthYearPicker } from "./MonthYearPicker";
 import { ExportPreviewDialog } from "./ExportPreviewDialog";
 import {
@@ -28,20 +38,37 @@ export function ScheduleView({
   isEditMode,
   setIsEditMode,
 }: ScheduleViewProps) {
+  // Initialize state based on the selected month
   const [scheduleExists, setScheduleExists] = useState(() =>
     hasScheduleForMonth(selectedMonth),
   );
+
+  // Load data if schedule exists, otherwise empty
   const [scheduleData, setScheduleData] = useState(() =>
     scheduleExists
       ? generateMockScheduleData(selectedMonth)
       : [],
   );
+
   const [selectedFilters, setSelectedFilters] = useState<
     SelectedFilter[]
   >([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] =
     useState(false);
+
+  // Sync state when selectedMonth changes externally or via picker
+  useEffect(() => {
+    const exists = hasScheduleForMonth(selectedMonth);
+    setScheduleExists(exists);
+    if (exists) {
+      setScheduleData(generateMockScheduleData(selectedMonth));
+    } else {
+      setScheduleData([]);
+    }
+    setIsEditMode(false);
+    setCurrentWeekStart(0);
+  }, [selectedMonth, setIsEditMode, setCurrentWeekStart]);
 
   // --- Logic for Dates & Weeks ---
   const weekDates = useMemo(() => {
@@ -85,7 +112,10 @@ export function ScheduleView({
   // --- Handlers ---
   const monthYearDisplay = selectedMonth.toLocaleDateString(
     "en-US",
-    { month: "long", year: "numeric" },
+    {
+      month: "long",
+      year: "numeric",
+    },
   );
 
   const handleMonthChange = (newMonth: Date) => {
@@ -96,12 +126,7 @@ export function ScheduleView({
       handleSaveChanges();
     }
     setSelectedMonth(newMonth);
-    setCurrentWeekStart(0);
-    const exists = hasScheduleForMonth(newMonth);
-    setScheduleExists(exists);
-    if (exists)
-      setScheduleData(generateMockScheduleData(newMonth));
-    setIsEditMode(false);
+    // The useEffect hook above will handle data fetching/resetting
   };
 
   const handleWeekNavigation = (direction: "next" | "prev") => {
@@ -109,48 +134,25 @@ export function ScheduleView({
       direction === "next"
         ? currentWeekStart + 1
         : currentWeekStart - 1;
-    const newWeekDates = weekDates.slice(
-      newWeekStart * 7,
-      newWeekStart * 7 + 7,
-    );
-    const hasOutOfMonthDates = newWeekDates.some(
-      (date) => date.getMonth() !== selectedMonth.getMonth(),
-    );
-
-    if (hasOutOfMonthDates && newWeekDates.length > 0) {
-      const targetDate =
-        newWeekDates[
-          direction === "next" ? newWeekDates.length - 1 : 0
-        ];
-      const targetMonth = new Date(
-        targetDate.getFullYear(),
-        targetDate.getMonth(),
-        1,
-      );
-      handleMonthChange(targetMonth);
-    } else {
-      setCurrentWeekStart(newWeekStart);
-    }
+    setCurrentWeekStart(newWeekStart);
   };
 
   const handleCreateSchedule = () => {
     setIsCreating(true);
+    // Simulate API call to create schedule
     setTimeout(() => {
       setScheduleExists(true);
+      // Requirement 1: Generate default data (1 shift per day)
       setScheduleData(generateMockScheduleData(selectedMonth));
-      setIsEditMode(true);
+      setIsEditMode(true); // Automatically enter edit mode after creation
       setIsCreating(false);
     }, 1000);
-  };
-
-  const handleExportClick = () => {
-    setIsExportDialogOpen(true);
   };
 
   const handleConfirmExport = () => {
     setIsExportDialogOpen(false);
     alert(
-      `Downloading PDF schedule for ${monthYearDisplay}...`,
+      `Downloading PDF schedule for ${monthYearDisplay} (Full Month)...`,
     );
   };
 
@@ -161,6 +163,7 @@ export function ScheduleView({
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
+    // Revert to original generated data (simulate fetching saved state)
     setScheduleData(generateMockScheduleData(selectedMonth));
   };
 
@@ -208,14 +211,25 @@ export function ScheduleView({
 
   const weekDisplay =
     currentWeekDates.length > 0
-      ? `Week ${currentWeekStart + 1} (${currentWeekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${currentWeekDates[currentWeekDates.length - 1].toLocaleDateString("en-US", { month: "short", day: "numeric" })})`
+      ? `Week ${currentWeekStart + 1} (${currentWeekDates[0].toLocaleDateString(
+          "en-US",
+          {
+            month: "short",
+            day: "numeric",
+          },
+        )} - ${currentWeekDates[
+          currentWeekDates.length - 1
+        ].toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        })})`
       : "";
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-50 overflow-hidden font-sans">
       {/* 1. Header Section */}
-      <div className="bg-[#EA0029] text-white px-6 py-3 flex items-center justify-between shrink-0 shadow-md z-40">
-        <h1 className="text-lg font-medium tracking-wide">
+      <div className="bg-[#EA0029] text-white px-6 py-4 flex items-center justify-between shrink-0 shadow-md z-40">
+        <h1 className="text-xl font-semibold tracking-wide">
           Staff Schedule - {monthYearDisplay}
           {isEditMode && (
             <span className="opacity-80 font-normal">
@@ -230,15 +244,15 @@ export function ScheduleView({
             <>
               <button
                 onClick={() => setIsEditMode(true)}
-                className="px-3 py-1.5 bg-white/10 text-white border border-white/20 rounded hover:bg-white/20 transition-colors flex items-center gap-2 text-sm"
+                className="px-4 py-2 bg-white/10 text-white border border-white/20 rounded hover:bg-white/20 transition-colors flex items-center gap-2 text-base"
               >
-                <Edit2 className="w-4 h-4" /> Edit
+                <Edit2 className="w-5 h-5" /> Edit
               </button>
               <button
-                onClick={handleExportClick}
-                className="px-3 py-1.5 bg-white text-[#EA0029] font-medium rounded hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm shadow-sm"
+                onClick={() => setIsExportDialogOpen(true)}
+                className="px-4 py-2 bg-white text-[#EA0029] font-medium rounded hover:bg-gray-100 transition-colors flex items-center gap-2 text-base shadow-sm"
               >
-                <Download className="w-4 h-4" /> Export PDF
+                <Download className="w-5 h-5" /> Export PDF
               </button>
             </>
           )}
@@ -247,15 +261,15 @@ export function ScheduleView({
             <>
               <button
                 onClick={handleCancelEdit}
-                className="px-3 py-1.5 bg-black/20 text-white rounded hover:bg-black/30 transition-colors flex items-center gap-2 text-sm"
+                className="px-4 py-2 bg-black/20 text-white rounded hover:bg-black/30 transition-colors flex items-center gap-2 text-base"
               >
-                <X className="w-4 h-4" /> Cancel
+                <X className="w-5 h-5" /> Cancel
               </button>
               <button
                 onClick={handleSaveChanges}
-                className="px-3 py-1.5 bg-white text-[#EA0029] font-bold rounded hover:bg-gray-100 transition-colors flex items-center gap-2 text-sm shadow-sm"
+                className="px-4 py-2 bg-white text-[#EA0029] font-bold rounded hover:bg-gray-100 transition-colors flex items-center gap-2 text-base shadow-sm"
               >
-                <Save className="w-4 h-4" /> Save Changes
+                <Save className="w-5 h-5" /> Save Changes
               </button>
             </>
           )}
@@ -264,48 +278,15 @@ export function ScheduleView({
 
       {/* 2. Controls Section */}
       {scheduleExists && (
-        <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0 shadow-sm z-30">
-          <div className="flex items-center justify-between gap-4 mb-3">
-            {/* Week Navigation */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => handleWeekNavigation('prev')}
-                disabled={!canGoPrevious}
-                className={`p-2 rounded ${
-                  canGoPrevious
-                    ? 'hover:bg-gray-100 text-gray-700'
-                    : 'text-gray-300 cursor-not-allowed'
-                }`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              
-              <span className="text-sm min-w-[280px] text-center font-medium">
-                {weekDisplay}
-              </span>
-              
-              <button
-                onClick={() => handleWeekNavigation('next')}
-                disabled={!canGoNext}
-                className={`p-2 rounded ${
-                  canGoNext
-                    ? 'hover:bg-gray-100 text-gray-700'
-                    : 'text-gray-300 cursor-not-allowed'
-                }`}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-
-              {/* Month Selector */}
-              <MonthYearPicker
-                selectedMonth={selectedMonth}
-                onChange={handleMonthChange}
-              />
-            </div>
+        <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0 shadow-sm z-30 flex items-center gap-6">
+          <div className="shrink-0">
+            <MonthYearPicker
+              selectedMonth={selectedMonth}
+              onChange={handleMonthChange}
+            />
           </div>
 
-          {/* Filter */}
-          <div className="flex items-center gap-4">
+          <div className="flex-1 max-w-2xl">
             <FilterCombobox
               departments={filterOptions.departments}
               designations={filterOptions.designations}
@@ -313,6 +294,26 @@ export function ScheduleView({
               selectedFilters={selectedFilters}
               onFilterChange={setSelectedFilters}
             />
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto shrink-0 bg-gray-50 p-1.5 rounded-md border border-gray-200">
+            <button
+              onClick={() => handleWeekNavigation("prev")}
+              disabled={!canGoPrevious}
+              className={`p-2 rounded hover:bg-white hover:shadow-sm transition-all ${!canGoPrevious ? "opacity-30 cursor-not-allowed" : "text-gray-600"}`}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-base font-medium text-gray-700 min-w-[200px] text-center select-none">
+              {weekDisplay}
+            </span>
+            <button
+              onClick={() => handleWeekNavigation("next")}
+              disabled={!canGoNext}
+              className={`p-2 rounded hover:bg-white hover:shadow-sm transition-all ${!canGoNext ? "opacity-30 cursor-not-allowed" : "text-gray-600"}`}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
       )}
@@ -347,6 +348,7 @@ export function ScheduleView({
         open={isExportDialogOpen}
         onOpenChange={setIsExportDialogOpen}
         data={filteredScheduleData}
+        weekDates={currentWeekDates} // Note: Dialog internally generates month dates now, but prop remains for type safety
         month={selectedMonth}
         onConfirm={handleConfirmExport}
       />
