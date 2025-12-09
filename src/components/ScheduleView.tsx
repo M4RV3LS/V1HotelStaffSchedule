@@ -19,6 +19,7 @@ import { ExportPreviewDialog } from "./ExportPreviewDialog";
 import {
   generateMockScheduleData,
   hasScheduleForMonth,
+  isMonthAllowed,
 } from "../utils/scheduleData";
 
 interface ScheduleViewProps {
@@ -108,6 +109,9 @@ export function ScheduleView({
   const totalWeeks = Math.ceil(weekDates.length / 7);
   const canGoPrevious = currentWeekStart > 0;
   const canGoNext = currentWeekStart < totalWeeks - 1;
+
+  // Check if current month is allowed (Requirement 4)
+  const currentMonthAllowed = isMonthAllowed(selectedMonth);
 
   // --- Handlers ---
   const monthYearDisplay = selectedMonth.toLocaleDateString(
@@ -276,47 +280,49 @@ export function ScheduleView({
         </div>
       </div>
 
-      {/* 2. Controls Section */}
-      {scheduleExists && (
-        <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0 shadow-sm z-30 flex items-center gap-6">
-          <div className="shrink-0">
-            <MonthYearPicker
-              selectedMonth={selectedMonth}
-              onChange={handleMonthChange}
-            />
-          </div>
-
-          <div className="flex-1 max-w-2xl">
-            <FilterCombobox
-              departments={filterOptions.departments}
-              designations={filterOptions.designations}
-              staffNames={filterOptions.staffNames}
-              selectedFilters={selectedFilters}
-              onFilterChange={setSelectedFilters}
-            />
-          </div>
-
-          <div className="flex items-center gap-2 ml-auto shrink-0 bg-gray-50 p-1.5 rounded-md border border-gray-200">
-            <button
-              onClick={() => handleWeekNavigation("prev")}
-              disabled={!canGoPrevious}
-              className={`p-2 rounded hover:bg-white hover:shadow-sm transition-all ${!canGoPrevious ? "opacity-30 cursor-not-allowed" : "text-gray-600"}`}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <span className="text-base font-medium text-gray-700 min-w-[200px] text-center select-none">
-              {weekDisplay}
-            </span>
-            <button
-              onClick={() => handleWeekNavigation("next")}
-              disabled={!canGoNext}
-              className={`p-2 rounded hover:bg-white hover:shadow-sm transition-all ${!canGoNext ? "opacity-30 cursor-not-allowed" : "text-gray-600"}`}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
+      {/* 2. Controls Section - Now visible even without schedule (Requirement 3) */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0 shadow-sm z-30 flex items-center gap-6">
+        <div className="shrink-0">
+          <MonthYearPicker
+            selectedMonth={selectedMonth}
+            onChange={handleMonthChange}
+          />
         </div>
-      )}
+
+        {scheduleExists && (
+          <>
+            <div className="flex-1 max-w-2xl">
+              <FilterCombobox
+                departments={filterOptions.departments}
+                designations={filterOptions.designations}
+                staffNames={filterOptions.staffNames}
+                selectedFilters={selectedFilters}
+                onFilterChange={setSelectedFilters}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto shrink-0 bg-gray-50 p-1.5 rounded-md border border-gray-200">
+              <button
+                onClick={() => handleWeekNavigation("prev")}
+                disabled={!canGoPrevious}
+                className={`p-2 rounded hover:bg-white hover:shadow-sm transition-all ${!canGoPrevious ? "opacity-30 cursor-not-allowed" : "text-gray-600"}`}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <span className="text-base font-medium text-gray-700 min-w-[200px] text-center select-none">
+                {weekDisplay}
+              </span>
+              <button
+                onClick={() => handleWeekNavigation("next")}
+                disabled={!canGoNext}
+                className={`p-2 rounded hover:bg-white hover:shadow-sm transition-all ${!canGoNext ? "opacity-30 cursor-not-allowed" : "text-gray-600"}`}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* 3. Content */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
@@ -326,6 +332,7 @@ export function ScheduleView({
               month={monthYearDisplay}
               onCreateSchedule={handleCreateSchedule}
               isCreating={isCreating}
+              isAllowed={currentMonthAllowed}
             />
           </div>
         ) : (

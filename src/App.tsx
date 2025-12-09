@@ -8,6 +8,7 @@ import { getWeekIndexForDate } from './utils/dateHelpers';
 
 function App() {
   const [activeTab, setActiveTab] = useState<'schedule' | 'history' | 'reports'>('schedule');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   // Initialize with today's date and calculate the correct week
   const today = new Date();
@@ -17,10 +18,10 @@ function App() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        <Header isSidebarOpen={isSidebarOpen} onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         
         <main className="flex-1 overflow-auto">
           <div className="p-6">

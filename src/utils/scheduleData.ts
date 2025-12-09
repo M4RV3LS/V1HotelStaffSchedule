@@ -167,3 +167,15 @@ export function hasScheduleForMonth(month: Date): boolean {
 
   return true;
 }
+
+// Helper function to check if a month is within the allowed range (current month + 1)
+export function isMonthAllowed(month: Date): boolean {
+  const today = new Date();
+  const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const checkMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+  
+  // Allow all past months, current month, and next month
+  // Block any months after next month (current month + 2 and beyond)
+  return checkMonth <= nextMonth;
+}

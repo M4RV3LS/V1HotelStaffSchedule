@@ -18,10 +18,16 @@ import {
   Shield,
   FileCheck,
   LogOut,
-  RotateCcw
+  RotateCcw,
+  X
 } from 'lucide-react';
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const menuItems = [
     { icon: BarChart3, label: 'Summary Report', active: false },
     { icon: Home, label: 'Room Chart', active: false },
@@ -47,18 +53,31 @@ export function Sidebar() {
     { icon: FileCheck, label: 'Terms & Conditions', active: false },
   ];
 
+  if (!isOpen) {
+    return null;
+  }
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
       {/* User Welcome */}
       <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#EA0029] rounded flex items-center justify-center text-white">
-            R
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#EA0029] rounded flex items-center justify-center text-white">
+              R
+            </div>
+            <div>
+              <div className="text-xs text-gray-500">Welcome,</div>
+              <div className="text-sm">User Name</div>
+            </div>
           </div>
-          <div>
-            <div className="text-xs text-gray-500">Welcome,</div>
-            <div className="text-sm">User Name</div>
-          </div>
+          <button
+            onClick={onToggle}
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            aria-label="Close sidebar"
+          >
+            <X className="w-4 h-4 text-gray-600" />
+          </button>
         </div>
       </div>
 

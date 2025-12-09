@@ -1,11 +1,25 @@
-import { Bell, FileText } from 'lucide-react';
+import { Bell, FileText, Menu } from 'lucide-react';
 
-export function Header() {
+interface HeaderProps {
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
+}
+
+export function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
   return (
     <header className="bg-white border-b border-gray-200">
       <div className="flex items-center justify-between px-6 py-3">
         {/* Logo Section */}
         <div className="flex items-center gap-4">
+          {!isSidebarOpen && (
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 hover:bg-gray-100 rounded transition-colors"
+              aria-label="Open sidebar"
+            >
+              <Menu className="w-5 h-5 text-gray-600" />
+            </button>
+          )}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#EA0029] rounded flex items-center justify-center text-white">
               R
