@@ -24,7 +24,7 @@ export interface SelectedFilter {
 export function FilterCombobox({
   departments,
   designations,
-  staffNames,
+  staffNames: employeeNames,
   selectedFilters,
   onFilterChange,
   className,
@@ -99,7 +99,7 @@ export function FilterCombobox({
   const filteredDesignations = designations.filter((desig) =>
     desig.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  const filteredStaffNames = staffNames.filter(
+  const filteredStaffNames = employeeNames.filter(
     (staff) =>
       staff.name
         .toLowerCase()
@@ -265,7 +265,7 @@ export function FilterCombobox({
                 {filteredStaffNames.length > 0 && (
                   <div className="mb-2">
                     <div className="px-2 py-1 text-[10px] uppercase font-bold text-gray-500">
-                      Staff
+                      Employees
                     </div>
                     {filteredStaffNames.map((staff) => (
                       <label

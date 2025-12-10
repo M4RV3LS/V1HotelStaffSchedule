@@ -175,24 +175,24 @@ export function ScheduleView({
   const filterOptions = useMemo(() => {
     const departments = new Set<string>();
     const designations = new Set<string>();
-    const staffNames: {
+    const employeeNames: {
       name: string;
       department: string;
       designation: string;
     }[] = [];
-    scheduleData.forEach((staff) => {
-      departments.add(staff.department);
-      designations.add(staff.designation);
-      staffNames.push({
-        name: staff.staffName,
-        department: staff.department,
-        designation: staff.designation,
+    scheduleData.forEach((employee) => {
+      departments.add(employee.department);
+      designations.add(employee.designation);
+      employeeNames.push({
+        name: employee.employeeName,
+        department: employee.department,
+        designation: employee.designation,
       });
     });
     return {
       departments: Array.from(departments).sort(),
       designations: Array.from(designations).sort(),
-      staffNames: staffNames.sort((a, b) =>
+      employeeNames: employeeNames.sort((a, b) =>
         a.name.localeCompare(b.name),
       ),
     };
@@ -200,14 +200,14 @@ export function ScheduleView({
 
   const filteredScheduleData = useMemo(() => {
     if (selectedFilters.length === 0) return scheduleData;
-    return scheduleData.filter((staff) => {
+    return scheduleData.filter((employee) => {
       return selectedFilters.some((filter) => {
         if (filter.type === "department")
-          return staff.department === filter.value;
+          return employee.department === filter.value;
         if (filter.type === "designation")
-          return staff.designation === filter.value;
+          return employee.designation === filter.value;
         if (filter.type === "name")
-          return staff.staffName === filter.value;
+          return employee.employeeName === filter.value;
         return false;
       });
     });
@@ -234,7 +234,7 @@ export function ScheduleView({
       {/* 1. Header Section */}
       <div className="bg-[#EA0029] text-white px-6 py-4 flex items-center justify-between shrink-0 shadow-md z-40">
         <h1 className="text-xl font-semibold tracking-wide">
-          Staff Schedule - {monthYearDisplay}
+          Employee Schedule - {monthYearDisplay}
           {isEditMode && (
             <span className="opacity-80 font-normal">
               {" "}
@@ -295,7 +295,7 @@ export function ScheduleView({
               <FilterCombobox
                 departments={filterOptions.departments}
                 designations={filterOptions.designations}
-                staffNames={filterOptions.staffNames}
+                staffNames={filterOptions.employeeNames}
                 selectedFilters={selectedFilters}
                 onFilterChange={setSelectedFilters}
               />

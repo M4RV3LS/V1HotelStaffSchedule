@@ -4,7 +4,7 @@ export interface ScheduleEntry {
   id: string;
   department: string;
   designation: string;
-  staffName: string;
+  employeeName: string;
   schedule: {
     [date: string]: {
       attendance: "Present" | "Absent";
@@ -13,7 +13,7 @@ export interface ScheduleEntry {
   };
 }
 
-const staffList = [
+const employeeList = [
   {
     department: "Front Desk",
     designation: "Manager",
@@ -41,17 +41,17 @@ const staffList = [
   },
   {
     department: "Housekeeping",
-    designation: "Staff",
+    designation: "Employee",
     name: "Emily Davis",
   },
   {
     department: "Housekeeping",
-    designation: "Staff",
+    designation: "Employee",
     name: "Maria Garcia",
   },
   {
     department: "Housekeeping",
-    designation: "Staff",
+    designation: "Employee",
     name: "Anna Rodriguez",
   },
   {
@@ -84,7 +84,7 @@ const designationOrder: { [key: string]: number } = {
   Technician: 5,
   Receptionist: 6,
   Cook: 7,
-  Staff: 8,
+  Employee: 8,
   Assistant: 9,
 };
 
@@ -93,6 +93,7 @@ const shiftOptions = [
   "Middle",
   "Afternoon",
   "Night",
+  "All Day",
 ];
 
 export function generateMockScheduleData(
@@ -106,7 +107,7 @@ export function generateMockScheduleData(
     0,
   ).getDate();
 
-  const sortedStaff = [...staffList].sort((a, b) => {
+  const sortedStaff = [...employeeList].sort((a, b) => {
     if (a.department !== b.department)
       return a.department.localeCompare(b.department);
     return (
@@ -143,7 +144,7 @@ export function generateMockScheduleData(
       id: `staff-${idx}`,
       department: staff.department,
       designation: staff.designation,
-      staffName: staff.name,
+      employeeName: staff.name,
       schedule,
     };
   });

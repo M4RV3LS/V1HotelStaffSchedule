@@ -21,7 +21,7 @@ interface ScheduleEntry {
   id: string;
   department: string;
   designation: string;
-  staffName: string;
+  employeeName: string;
   schedule: {
     [date: string]: {
       attendance: "Present" | "Absent";
@@ -65,6 +65,12 @@ export const getShiftStyle = (shift: string) => {
         text: "text-indigo-800",
         border: "border-indigo-300",
       };
+    case "All Day":
+      return {
+        bg: "bg-purple-50",
+        text: "text-purple-800",
+        border: "border-purple-300",
+      };
     default:
       return {
         bg: "bg-gray-50",
@@ -91,7 +97,7 @@ export function CellContent({
         className={cn(
           "flex items-center justify-center w-full h-full rounded-sm transition-all",
           "bg-red-50/50 border border-red-100 text-red-500 font-bold",
-          "text-base",
+          "text-sm",
           isEditMode &&
             "cursor-pointer hover:ring-2 hover:ring-[#EA0029] hover:z-10",
         )}
@@ -121,7 +127,7 @@ export function CellContent({
             key={idx}
             className={cn(
               "w-full flex-1 flex items-center justify-center rounded-sm font-medium border truncate px-2 py-1 z-10",
-              "text-base",
+              "text-sm",
               style.bg,
               style.text,
               style.border,
@@ -141,6 +147,7 @@ const availableShifts = [
   "Middle",
   "Afternoon",
   "Night",
+  "All Day",
 ];
 
 export function ScheduleGrid({
@@ -161,47 +168,63 @@ export function ScheduleGrid({
   };
 
   const updateAttendance = (
-    staffId: string,
+    employeeId: string,
     dateKey: string,
     val: string,
   ) => {
     setScheduleData(
-      scheduleData.map((staff) =>
-        staff.id === staffId
+      scheduleData.map((employee) =>
+        employee.id === employeeId
           ? {
-              ...staff,
+              ...employee,
               schedule: {
-                ...staff.schedule,
+                ...employee.schedule,
                 [dateKey]: {
-                  ...staff.schedule[dateKey],
+                  ...employee.schedule[dateKey],
                   attendance: val as any,
                 },
               },
             }
-          : staff,
+          : employee,
       ),
     );
   };
 
   const updateShift = (
-    staffId: string,
+    employeeId: string,
     dateKey: string,
     index: number,
     val: string,
   ) => {
     setScheduleData(
-      scheduleData.map((staff) => {
-        if (staff.id !== staffId) return staff;
+      scheduleData.map((employee) => {
+        if (employee.id !== employeeId) return employee;
         const currentShifts = [
-          ...staff.schedule[dateKey].shifts,
+          ...employee.schedule[dateKey].shifts,
         ];
+
+        // If selecting "All Day", replace all shifts with just "All Day"
+        if (val === "All Day") {
+          return {
+            ...employee,
+            schedule: {
+              ...employee.schedule,
+              [dateKey]: {
+                ...employee.schedule[dateKey],
+                shifts: ["All Day"],
+              },
+            },
+          };
+        }
+
+        // If "All Day" exists and trying to change it to something else, allow it
         currentShifts[index] = val;
         return {
-          ...staff,
+          ...employee,
           schedule: {
-            ...staff.schedule,
+            ...employee.schedule,
             [dateKey]: {
-              ...staff.schedule[dateKey],
+              ...employee.schedule[dateKey],
               shifts: currentShifts,
             },
           },
@@ -210,29 +233,47 @@ export function ScheduleGrid({
     );
   };
 
-  const addShift = (staffId: string, dateKey: string) => {
+  const addShift = (employeeId: string, dateKey: string) => {
     setScheduleData(
-      scheduleData.map((staff) => {
-        if (staff.id !== staffId) return staff;
+      scheduleData.map((employee) => {
+        if (employee.id !== employeeId) return employee;
         const currentShifts = [
-          ...staff.schedule[dateKey].shifts,
+          ...employee.schedule[dateKey].shifts,
         ];
+
+        // Cannot add shifts if "All Day" is already selected
+        if (currentShifts.includes("All Day")) {
+          return employee;
+        }
+
         if (currentShifts.length < 4) {
           const firstUnused = availableShifts.find(
             (s) => !currentShifts.includes(s),
           );
           if (firstUnused) {
-            currentShifts.push(firstUnused);
+            // If adding "All Day", replace all shifts with just "All Day"
+            if (firstUnused === "All Day") {
+              currentShifts.length = 0; // Clear array
+              currentShifts.push("All Day");
+            } else {
+              currentShifts.push(firstUnused);
+            }
           } else {
-            currentShifts.push(availableShifts[0]);
+            // Find first non-All Day shift
+            const regularShift = availableShifts.find(
+              (s) => s !== "All Day",
+            );
+            if (regularShift) {
+              currentShifts.push(regularShift);
+            }
           }
         }
         return {
-          ...staff,
+          ...employee,
           schedule: {
-            ...staff.schedule,
+            ...employee.schedule,
             [dateKey]: {
-              ...staff.schedule[dateKey],
+              ...employee.schedule[dateKey],
               shifts: currentShifts,
             },
           },
@@ -242,22 +283,22 @@ export function ScheduleGrid({
   };
 
   const removeShift = (
-    staffId: string,
+    employeeId: string,
     dateKey: string,
     index: number,
   ) => {
     setScheduleData(
-      scheduleData.map((staff) => {
-        if (staff.id !== staffId) return staff;
-        const currentShifts = staff.schedule[
+      scheduleData.map((employee) => {
+        if (employee.id !== employeeId) return employee;
+        const currentShifts = employee.schedule[
           dateKey
         ].shifts.filter((_, i) => i !== index);
         return {
-          ...staff,
+          ...employee,
           schedule: {
-            ...staff.schedule,
+            ...employee.schedule,
             [dateKey]: {
-              ...staff.schedule[dateKey],
+              ...employee.schedule[dateKey],
               shifts: currentShifts,
             },
           },
@@ -266,23 +307,24 @@ export function ScheduleGrid({
     );
   };
 
-  const groupedStaff = scheduleData.reduce(
-    (acc, staff) => {
-      if (!acc[staff.department]) acc[staff.department] = [];
-      acc[staff.department].push(staff);
+  const groupedEmployees = scheduleData.reduce(
+    (acc, employee) => {
+      if (!acc[employee.department])
+        acc[employee.department] = [];
+      acc[employee.department].push(employee);
       return acc;
     },
     {} as { [key: string]: ScheduleEntry[] },
   );
 
-  const departments = Object.keys(groupedStaff).sort();
+  const departments = Object.keys(groupedEmployees).sort();
 
   return (
     <div className="w-full h-full overflow-auto bg-white">
       {scheduleData.length === 0 && hasActiveFilters ? (
         <div className="flex flex-col items-center justify-center h-full text-gray-500 py-12">
           <p className="text-xl font-medium">
-            No staff found matching filters
+            No employees found matching filters
           </p>
         </div>
       ) : (
@@ -292,9 +334,9 @@ export function ScheduleGrid({
         >
           <thead className="sticky top-0 z-20 bg-white shadow-sm ring-1 ring-gray-100">
             <tr className="bg-white border-b border-gray-200 h-24">
-              <th className="sticky left-0 z-30 top-0 bg-gray-50/95 backdrop-blur px-6 py-4 text-left w-80 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)]">
+              <th className="sticky left-0 z-30 top-0 bg-gray-50/95 backdrop-blur px-6 py-4 text-left w-60 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)]">
                 <div className="text-base font-bold text-gray-500 uppercase tracking-wider">
-                  Staff Details
+                  Employee Details
                 </div>
               </th>
               {weekDates.map((date) => {
@@ -348,284 +390,348 @@ export function ScheduleGrid({
           <tbody className="bg-white">
             {departments.map((department, deptIdx) => (
               <Fragment key={department}>
-                {groupedStaff[department].map((staff, idx) => {
-                  const isFirstInGroup = idx === 0;
+                {groupedEmployees[department].map(
+                  (employee, idx) => {
+                    const isFirstInGroup = idx === 0;
 
-                  // Helper to determine if this is the absolute last row in the table
-                  const isLastRow =
-                    deptIdx === departments.length - 1 &&
-                    idx === groupedStaff[department].length - 1;
+                    // Helper to determine if this is the absolute last row in the table
+                    const isLastRow =
+                      deptIdx === departments.length - 1 &&
+                      idx ===
+                        groupedEmployees[department].length - 1;
 
-                  return (
-                    <tr
-                      key={staff.id}
-                      className={cn(
-                        "group hover:bg-gray-50/80 transition-colors",
-                        isFirstInGroup
-                          ? "border-t border-gray-200"
-                          : "border-t border-gray-100",
-                      )}
-                    >
-                      {/* Name Column */}
-                      <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50/80 px-6 py-6 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] align-top h-40">
-                        <div className="h-full flex flex-col justify-start gap-1.5">
-                          {isFirstInGroup && (
-                            <div className="text-sm font-extrabold text-gray-400 uppercase tracking-widest mb-2">
-                              {department}
-                            </div>
-                          )}
-                          <div className="font-bold text-base text-gray-900 leading-snug">
-                            {staff.staffName}
-                          </div>
-                          <div className="text-base text-gray-500 font-medium">
-                            {staff.designation}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Schedule Columns */}
-                      {weekDates.map((date) => {
-                        const dateKey = date
-                          .toISOString()
-                          .split("T")[0];
-                        const entry = staff.schedule[dateKey];
-                        const isToday = isSameDay(date, today);
-                        const isInMonth = isDateInMonth(date);
-
-                        const cellContainerClass =
-                          "w-full h-40";
-
-                        // Requirement 1: Apply Left/Right borders for Today's column body cells.
-                        // Apply Bottom border ONLY if it is the last row to close the "outer border".
-                        const todayBorderClasses = isToday
-                          ? cn(
-                              "border-l-2 border-r-2 border-[#EA0029] bg-red-50/5",
-                              isLastRow && "border-b-2",
-                            )
-                          : "";
-
-                        if (!isInMonth) {
-                          return (
-                            <td
-                              key={dateKey}
-                              className={cn(
-                                "bg-gray-50/30 border-r border-gray-100 p-0 h-40",
-                                todayBorderClasses,
-                              )}
-                            >
-                              <div
-                                className={cellContainerClass}
-                              />
-                            </td>
-                          );
-                        }
-                        if (!entry)
-                          return (
-                            <td
-                              key={dateKey}
-                              className={cn(
-                                "border-r border-gray-100 p-0 h-40",
-                                todayBorderClasses,
-                              )}
-                            >
-                              <div
-                                className={cellContainerClass}
-                              />
-                            </td>
-                          );
-
-                        return (
-                          <td
-                            key={dateKey}
-                            className={cn(
-                              "p-2 align-top border-r p-4 border-gray-100 h-40",
-                              todayBorderClasses,
+                    return (
+                      <tr
+                        key={employee.id}
+                        className={cn(
+                          "group hover:bg-gray-50/80 transition-colors",
+                          isFirstInGroup
+                            ? "border-t border-gray-200"
+                            : "border-t border-gray-100",
+                        )}
+                      >
+                        {/* Name Column */}
+                        <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50/80 px-6 py-6 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] align-top h-40">
+                          <div className="h-full flex flex-col justify-start gap-1.5">
+                            {isFirstInGroup && (
+                              <div className="text-sm font-extrabold text-gray-400 uppercase tracking-widest mb-2">
+                                {department}
+                              </div>
                             )}
-                          >
-                            <div className="h-full w-full">
-                              {isEditMode ? (
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <div
-                                      role="button"
-                                      tabIndex={0}
-                                      className="w-full h-full rounded hover:ring-1 hover:ring-gray-200 outline-none"
-                                    >
-                                      <CellContent
-                                        attendance={
-                                          entry.attendance
-                                        }
-                                        shifts={entry.shifts}
-                                        isEditMode={true}
-                                      />
-                                    </div>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-80 p-5 z-50 shadow-xl border-gray-200">
-                                    <div className="space-y-4">
-                                      <div className="font-bold text-base text-gray-900 pb-2 border-b flex justify-between items-center">
-                                        <span>
-                                          Edit Schedule
-                                        </span>
-                                        <span className="text-base font-normal text-gray-500">
-                                          {date.toLocaleDateString()}
-                                        </span>
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label className="text-xs font-bold text-gray-600 uppercase">
-                                          Status
-                                        </Label>
-                                        <Select
-                                          defaultValue={
+                            <div className="font-bold text-base text-gray-900 leading-snug">
+                              {employee.employeeName}
+                            </div>
+                            <div className="text-base text-gray-500 font-medium">
+                              {employee.designation}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Schedule Columns */}
+                        {weekDates.map((date) => {
+                          const dateKey = date
+                            .toISOString()
+                            .split("T")[0];
+                          const entry =
+                            employee.schedule[dateKey];
+                          const isToday = isSameDay(
+                            date,
+                            today,
+                          );
+                          const isInMonth = isDateInMonth(date);
+
+                          const cellContainerClass =
+                            "w-full h-40";
+
+                          // Requirement 1: Apply Left/Right borders for Today's column body cells.
+                          // Apply Bottom border ONLY if it is the last row to close the "outer border".
+                          const todayBorderClasses = isToday
+                            ? cn(
+                                "border-l-2 border-r-2 border-[#EA0029] bg-red-50/5",
+                                isLastRow && "border-b-2",
+                              )
+                            : "";
+
+                          if (!isInMonth) {
+                            return (
+                              <td
+                                key={dateKey}
+                                className={cn(
+                                  "bg-gray-50/30 border-r border-gray-100 p-0 h-40",
+                                  todayBorderClasses,
+                                )}
+                              >
+                                <div
+                                  className={cellContainerClass}
+                                />
+                              </td>
+                            );
+                          }
+                          if (!entry)
+                            return (
+                              <td
+                                key={dateKey}
+                                className={cn(
+                                  "border-r border-gray-100 p-0 h-40",
+                                  todayBorderClasses,
+                                )}
+                              >
+                                <div
+                                  className={cellContainerClass}
+                                />
+                              </td>
+                            );
+
+                          return (
+                            <td
+                              key={dateKey}
+                              className={cn(
+                                "p-2 align-top border-r p-4 border-gray-100 h-40",
+                                todayBorderClasses,
+                              )}
+                            >
+                              <div className="h-full w-full">
+                                {isEditMode ? (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <div
+                                        role="button"
+                                        tabIndex={0}
+                                        className="w-full h-full rounded hover:ring-1 hover:ring-gray-200 outline-none"
+                                      >
+                                        <CellContent
+                                          attendance={
                                             entry.attendance
                                           }
-                                          onValueChange={(
-                                            val,
-                                          ) =>
-                                            updateAttendance(
-                                              staff.id,
-                                              dateKey,
-                                              val,
-                                            )
-                                          }
-                                        >
-                                          <SelectTrigger className="h-10 text-base">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="Present">
-                                              On Duty (Present)
-                                            </SelectItem>
-                                            <SelectItem value="Absent">
-                                              Off Duty (Absent)
-                                            </SelectItem>
-                                          </SelectContent>
-                                        </Select>
+                                          shifts={entry.shifts}
+                                          isEditMode={true}
+                                        />
                                       </div>
-                                      {entry.attendance ===
-                                        "Present" && (
-                                        <div className="space-y-3 pt-2">
-                                          <div className="flex items-center justify-between">
-                                            <Label className="text-xs font-bold text-gray-600 uppercase">
-                                              Shifts
-                                            </Label>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-8 text-sm text-[#EA0029] hover:text-[#c40023] hover:bg-red-50 px-2 font-medium"
-                                              onClick={() =>
-                                                addShift(
-                                                  staff.id,
-                                                  dateKey,
-                                                )
-                                              }
-                                              disabled={
-                                                entry.shifts
-                                                  .length >= 4
-                                              }
-                                            >
-                                              <Plus className="w-4 h-4 mr-1" />{" "}
-                                              Add
-                                            </Button>
-                                          </div>
-                                          <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto">
-                                            {entry.shifts.map(
-                                              (shift, i) => (
-                                                <div
-                                                  key={i}
-                                                  className="flex gap-2 items-center"
-                                                >
-                                                  <div className="w-6 text-sm text-gray-400 font-bold">
-                                                    #{i + 1}
-                                                  </div>
-                                                  <Select
-                                                    value={
-                                                      shift
-                                                    }
-                                                    onValueChange={(
-                                                      val,
-                                                    ) =>
-                                                      updateShift(
-                                                        staff.id,
-                                                        dateKey,
-                                                        i,
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 p-5 z-50 shadow-xl border-gray-200">
+                                      <div className="space-y-4">
+                                        <div className="font-bold text-base text-gray-900 pb-2 border-b flex justify-between items-center">
+                                          <span>
+                                            Edit Schedule
+                                          </span>
+                                          <span className="text-base font-normal text-gray-500">
+                                            {date.toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label className="text-xs font-bold text-gray-600 uppercase">
+                                            Status
+                                          </Label>
+                                          <Select
+                                            defaultValue={
+                                              entry.attendance
+                                            }
+                                            onValueChange={(
+                                              val,
+                                            ) =>
+                                              updateAttendance(
+                                                employee.id,
+                                                dateKey,
+                                                val,
+                                              )
+                                            }
+                                          >
+                                            <SelectTrigger className="h-10 text-base">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="Present">
+                                                On Duty
+                                                (Present)
+                                              </SelectItem>
+                                              <SelectItem value="Absent">
+                                                Off Duty
+                                                (Absent)
+                                              </SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                        {entry.attendance ===
+                                          "Present" && (
+                                          <div className="space-y-3 pt-2">
+                                            <div className="flex items-center justify-between">
+                                              <Label className="text-xs font-bold text-gray-600 uppercase">
+                                                Shifts
+                                              </Label>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 text-sm text-[#EA0029] hover:text-[#c40023] hover:bg-red-50 px-2 font-medium"
+                                                onClick={() =>
+                                                  addShift(
+                                                    employee.id,
+                                                    dateKey,
+                                                  )
+                                                }
+                                                disabled={
+                                                  entry.shifts
+                                                    .length >=
+                                                    4 ||
+                                                  entry.shifts.includes(
+                                                    "All Day",
+                                                  )
+                                                }
+                                                title={
+                                                  entry.shifts.includes(
+                                                    "All Day",
+                                                  )
+                                                    ? "Cannot add shifts when All Day is selected"
+                                                    : ""
+                                                }
+                                              >
+                                                <Plus className="w-4 h-4 mr-1" />{" "}
+                                                Add
+                                              </Button>
+                                            </div>
+                                            <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto">
+                                              {entry.shifts.map(
+                                                (shift, i) => (
+                                                  <div
+                                                    key={i}
+                                                    className="flex gap-2 items-center"
+                                                  >
+                                                    <div className="w-6 text-sm text-gray-400 font-bold">
+                                                      #{i + 1}
+                                                    </div>
+                                                    <Select
+                                                      value={
+                                                        shift
+                                                      }
+                                                      onValueChange={(
                                                         val,
-                                                      )
-                                                    }
-                                                  >
-                                                    <SelectTrigger className="h-10 flex-1 text-base">
-                                                      <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                      {availableShifts.map(
-                                                        (s) => {
-                                                          const isSelectedElsewhere =
-                                                            entry.shifts.includes(
-                                                              s,
-                                                            ) &&
-                                                            s !==
-                                                              shift;
-                                                          return (
-                                                            <SelectItem
-                                                              key={
-                                                                s
-                                                              }
-                                                              value={
-                                                                s
-                                                              }
-                                                              disabled={
-                                                                isSelectedElsewhere
-                                                              }
-                                                            >
-                                                              {
-                                                                s
-                                                              }
-                                                            </SelectItem>
-                                                          );
-                                                        },
-                                                      )}
-                                                    </SelectContent>
-                                                  </Select>
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-10 w-10 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                                                    onClick={() =>
-                                                      removeShift(
-                                                        staff.id,
-                                                        dateKey,
-                                                        i,
-                                                      )
-                                                    }
-                                                  >
-                                                    <X className="w-5 h-5" />
-                                                  </Button>
-                                                </div>
-                                              ),
+                                                      ) =>
+                                                        updateShift(
+                                                          employee.id,
+                                                          dateKey,
+                                                          i,
+                                                          val,
+                                                        )
+                                                      }
+                                                    >
+                                                      <SelectTrigger className="h-10 flex-1 text-base">
+                                                        <SelectValue />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                        {availableShifts.map(
+                                                          (
+                                                            s,
+                                                          ) => {
+                                                            const isSelectedElsewhere =
+                                                              entry.shifts.includes(
+                                                                s,
+                                                              ) &&
+                                                              s !==
+                                                                shift;
+
+                                                            // Disable "All Day" if there are multiple shifts or other shifts exist
+                                                            const disableAllDay =
+                                                              s ===
+                                                                "All Day" &&
+                                                              (entry
+                                                                .shifts
+                                                                .length >
+                                                                1 ||
+                                                                (entry
+                                                                  .shifts
+                                                                  .length ===
+                                                                  1 &&
+                                                                  shift !==
+                                                                    "All Day"));
+
+                                                            // Disable other shifts if current selection is "All Day"
+                                                            const disableOthers =
+                                                              shift ===
+                                                                "All Day" &&
+                                                              s !==
+                                                                "All Day";
+
+                                                            return (
+                                                              <SelectItem
+                                                                key={
+                                                                  s
+                                                                }
+                                                                value={
+                                                                  s
+                                                                }
+                                                                disabled={
+                                                                  isSelectedElsewhere ||
+                                                                  disableAllDay ||
+                                                                  disableOthers
+                                                                }
+                                                              >
+                                                                {
+                                                                  s
+                                                                }
+                                                                {disableAllDay &&
+                                                                  " (Remove other shifts first)"}
+                                                              </SelectItem>
+                                                            );
+                                                          },
+                                                        )}
+                                                      </SelectContent>
+                                                    </Select>
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-10 w-10 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                                      onClick={() =>
+                                                        removeShift(
+                                                          employee.id,
+                                                          dateKey,
+                                                          i,
+                                                        )
+                                                      }
+                                                    >
+                                                      <X className="w-5 h-5" />
+                                                    </Button>
+                                                  </div>
+                                                ),
+                                              )}
+                                            </div>
+                                            {entry.shifts.includes(
+                                              "All Day",
+                                            ) && (
+                                              <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded text-sm text-purple-800">
+                                                <strong>
+                                                  All Day shift:
+                                                </strong>{" "}
+                                                This shift
+                                                covers the
+                                                entire day.
+                                                Cannot add or
+                                                select other
+                                                shifts.
+                                              </div>
                                             )}
                                           </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-                              ) : (
-                                <div className="w-full h-full">
-                                  <CellContent
-                                    attendance={
-                                      entry.attendance
-                                    }
-                                    shifts={entry.shifts}
-                                    isEditMode={false}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
+                                        )}
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                ) : (
+                                  <div className="w-full h-full">
+                                    <CellContent
+                                      attendance={
+                                        entry.attendance
+                                      }
+                                      shifts={entry.shifts}
+                                      isEditMode={false}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  },
+                )}
               </Fragment>
             ))}
           </tbody>

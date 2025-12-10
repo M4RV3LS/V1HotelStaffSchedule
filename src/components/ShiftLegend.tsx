@@ -24,7 +24,7 @@ export function ShiftLegend() {
       time: "22:00 - 06:00",
     },
     {
-      color: "bg-slate-400 border-slate-500",
+      color: "bg-purple-400 border-purple-500",
       label: "All Day",
       time: "Full Shift",
     },

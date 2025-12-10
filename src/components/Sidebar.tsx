@@ -39,7 +39,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
     { icon: Users, label: 'Walk In', active: false },
     { icon: Package, label: 'Corp/Gov Bookings', active: false },
     { icon: Calendar, label: 'Availability', active: false },
-    { icon: Calendar, label: 'Staff Schedule', active: true },
+    { icon: Calendar, label: 'Employee Schedule', active: true },
     { icon: DollarSign, label: 'Price Control', active: false },
     { icon: BarChart, label: 'Reports', active: false },
     { icon: CheckSquare, label: 'Training', active: false },
