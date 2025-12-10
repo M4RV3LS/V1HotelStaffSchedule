@@ -270,20 +270,17 @@ function EmployeeDesktopTable({
       <table className="w-full">
         <thead>
           <tr className="border-b-2 border-gray-300">
-            <th rowSpan={2} className="text-left py-3 px-4 text-sm text-gray-600 border-r border-gray-200">
-              Staff Name
+            <th rowSpan={2} className="text-left py-2 px-4 text-sm text-gray-600 border-r border-gray-200">
+              Employee Name
             </th>
-            <th rowSpan={2} className="text-left py-3 px-4 text-sm text-gray-600 border-r border-gray-200">
+            <th rowSpan={2} className="text-left py-2 px-4 text-sm text-gray-600 border-r border-gray-200">
               Department
             </th>
             <th colSpan={2} className="text-center py-2 px-4 text-sm text-gray-600 border-r border-gray-200 border-b border-gray-200">
               Attendance
             </th>
-            <th colSpan={3} className="text-center py-2 px-4 text-sm text-gray-600 border-r border-gray-200 border-b border-gray-200">
+            <th colSpan={3} className="text-center py-2 px-4 text-sm text-gray-600 border-b border-gray-200">
               Shifts
-            </th>
-            <th colSpan={5} className="text-center py-2 px-4 text-sm text-gray-600 border-b border-gray-200">
-              Issue / Ticket Status
             </th>
           </tr>
           <tr className="border-b border-gray-200">
@@ -291,12 +288,7 @@ function EmployeeDesktopTable({
             <th className="text-center py-2 px-3 text-xs text-gray-600 bg-red-50 border-r border-gray-200">Absent</th>
             <th className="text-center py-2 px-3 text-xs text-gray-600 bg-gray-50">Morning</th>
             <th className="text-center py-2 px-3 text-xs text-gray-600 bg-gray-50">Afternoon</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-gray-50 border-r border-gray-200">Night</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-green-50">Resolved (Not Ext.)</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-blue-50">Resolved (Ext.)</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-yellow-50">Partially Resolved</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-purple-50">In Progress</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-red-50">Open</th>
+            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-gray-50">Night</th>
           </tr>
         </thead>
         <tbody>
@@ -317,27 +309,7 @@ function EmployeeDesktopTable({
                 <td className="py-3 px-3 text-sm text-center text-red-600 border-r border-gray-100">{emp.totalAbsent}</td>
                 <td className="py-3 px-3 text-sm text-center text-gray-700">{emp.shifts.morning}</td>
                 <td className="py-3 px-3 text-sm text-center text-gray-700">{emp.shifts.afternoon}</td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700 border-r border-gray-100">{emp.shifts.night}</td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {emp.issueStats.resolvedNotExtended}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(emp.issueStats.resolvedNotExtended, totalIssues)}%)</span>
-                </td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {emp.issueStats.resolvedExtended}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(emp.issueStats.resolvedExtended, totalIssues)}%)</span>
-                </td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {emp.issueStats.partiallyResolved}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(emp.issueStats.partiallyResolved, totalIssues)}%)</span>
-                </td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {emp.issueStats.inProgress}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(emp.issueStats.inProgress, totalIssues)}%)</span>
-                </td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {emp.issueStats.open}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(emp.issueStats.open, totalIssues)}%)</span>
-                </td>
+                <td className="py-3 px-3 text-sm text-center text-gray-700">{emp.shifts.night}</td>
               </tr>
             );
           })}
@@ -384,62 +356,12 @@ function EmployeeDesktopTable({
                   )}%)
                 </span>
               </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900 border-r border-gray-200">
+              <td className="py-3 px-3 text-sm text-center text-gray-900">
                 <strong>{employeeTotals.night}</strong>
                 <span className="text-xs text-gray-600 ml-1">
                   ({calculatePercentage(
                     employeeTotals.night,
                     employeeTotals.morning + employeeTotals.afternoon + employeeTotals.night
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{employeeTotals.resolvedNotExtended}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    employeeTotals.resolvedNotExtended,
-                    employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                    employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{employeeTotals.resolvedExtended}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    employeeTotals.resolvedExtended,
-                    employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                    employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{employeeTotals.partiallyResolved}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    employeeTotals.partiallyResolved,
-                    employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                    employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{employeeTotals.inProgress}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    employeeTotals.inProgress,
-                    employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                    employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{employeeTotals.open}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    employeeTotals.open,
-                    employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                    employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open
                   )}%)
                 </span>
               </td>
@@ -477,11 +399,8 @@ function DepartmentDesktopTable({
             <th colSpan={2} className="text-center py-2 px-4 text-sm text-gray-600 border-r border-gray-200 border-b border-gray-200">
               Attendance
             </th>
-            <th colSpan={3} className="text-center py-2 px-4 text-sm text-gray-600 border-r border-gray-200 border-b border-gray-200">
+            <th colSpan={3} className="text-center py-2 px-4 text-sm text-gray-600 border-b border-gray-200">
               Shifts
-            </th>
-            <th colSpan={5} className="text-center py-2 px-4 text-sm text-gray-600 border-b border-gray-200">
-              Issue / Ticket Status
             </th>
           </tr>
           <tr className="border-b border-gray-200">
@@ -489,12 +408,7 @@ function DepartmentDesktopTable({
             <th className="text-center py-2 px-3 text-xs text-gray-600 bg-red-50 border-r border-gray-200">Absent</th>
             <th className="text-center py-2 px-3 text-xs text-gray-600 bg-gray-50">Morning</th>
             <th className="text-center py-2 px-3 text-xs text-gray-600 bg-gray-50">Afternoon</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-gray-50 border-r border-gray-200">Night</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-green-50">Resolved (Not Ext.)</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-blue-50">Resolved (Ext.)</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-yellow-50">Partially Resolved</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-purple-50">In Progress</th>
-            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-red-50">Open</th>
+            <th className="text-center py-2 px-3 text-xs text-gray-600 bg-gray-50">Night</th>
           </tr>
         </thead>
         <tbody>
@@ -514,27 +428,7 @@ function DepartmentDesktopTable({
                 <td className="py-3 px-3 text-sm text-center text-red-600 border-r border-gray-100">{dept.totalAbsent}</td>
                 <td className="py-3 px-3 text-sm text-center text-gray-700">{dept.shifts.morning}</td>
                 <td className="py-3 px-3 text-sm text-center text-gray-700">{dept.shifts.afternoon}</td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700 border-r border-gray-100">{dept.shifts.night}</td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {dept.issueStats.resolvedNotExtended}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(dept.issueStats.resolvedNotExtended, totalIssues)}%)</span>
-                </td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {dept.issueStats.resolvedExtended}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(dept.issueStats.resolvedExtended, totalIssues)}%)</span>
-                </td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {dept.issueStats.partiallyResolved}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(dept.issueStats.partiallyResolved, totalIssues)}%)</span>
-                </td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {dept.issueStats.inProgress}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(dept.issueStats.inProgress, totalIssues)}%)</span>
-                </td>
-                <td className="py-3 px-3 text-sm text-center text-gray-700">
-                  {dept.issueStats.open}
-                  <span className="text-xs text-gray-500 ml-1">({calculatePercentage(dept.issueStats.open, totalIssues)}%)</span>
-                </td>
+                <td className="py-3 px-3 text-sm text-center text-gray-700">{dept.shifts.night}</td>
               </tr>
             );
           })}
@@ -581,62 +475,12 @@ function DepartmentDesktopTable({
                   )}%)
                 </span>
               </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900 border-r border-gray-200">
+              <td className="py-3 px-3 text-sm text-center text-gray-900">
                 <strong>{departmentTotals.night}</strong>
                 <span className="text-xs text-gray-600 ml-1">
                   ({calculatePercentage(
                     departmentTotals.night,
                     departmentTotals.morning + departmentTotals.afternoon + departmentTotals.night
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{departmentTotals.resolvedNotExtended}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    departmentTotals.resolvedNotExtended,
-                    departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                    departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{departmentTotals.resolvedExtended}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    departmentTotals.resolvedExtended,
-                    departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                    departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{departmentTotals.partiallyResolved}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    departmentTotals.partiallyResolved,
-                    departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                    departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{departmentTotals.inProgress}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    departmentTotals.inProgress,
-                    departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                    departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open
-                  )}%)
-                </span>
-              </td>
-              <td className="py-3 px-3 text-sm text-center text-gray-900">
-                <strong>{departmentTotals.open}</strong>
-                <span className="text-xs text-gray-600 ml-1">
-                  ({calculatePercentage(
-                    departmentTotals.open,
-                    departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                    departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open
                   )}%)
                 </span>
               </td>
@@ -721,43 +565,6 @@ function EmployeeMobileCards({
                     <MetricBox label="Morning" value={emp.shifts.morning} color="gray" />
                     <MetricBox label="Afternoon" value={emp.shifts.afternoon} color="gray" />
                     <MetricBox label="Night" value={emp.shifts.night} color="gray" />
-                  </div>
-                </div>
-
-                {/* Issues */}
-                <div>
-                  <h5 className="text-xs text-gray-500 mb-2">Issue / Ticket Status</h5>
-                  <div className="space-y-2">
-                    <IssueRow 
-                      label="Resolved (Not Ext.)" 
-                      value={emp.issueStats.resolvedNotExtended} 
-                      total={totalIssues}
-                      color="green"
-                    />
-                    <IssueRow 
-                      label="Resolved (Ext.)" 
-                      value={emp.issueStats.resolvedExtended} 
-                      total={totalIssues}
-                      color="blue"
-                    />
-                    <IssueRow 
-                      label="Partially Resolved" 
-                      value={emp.issueStats.partiallyResolved} 
-                      total={totalIssues}
-                      color="yellow"
-                    />
-                    <IssueRow 
-                      label="In Progress" 
-                      value={emp.issueStats.inProgress} 
-                      total={totalIssues}
-                      color="purple"
-                    />
-                    <IssueRow 
-                      label="Open" 
-                      value={emp.issueStats.open} 
-                      total={totalIssues}
-                      color="red"
-                    />
                   </div>
                 </div>
               </div>
@@ -848,43 +655,6 @@ function EmployeeMobileCards({
               </div>
             </div>
           </div>
-
-          {/* Issues */}
-          <div>
-            <div className="text-xs text-gray-600 mb-1">Issues Total</div>
-            <div className="space-y-1">
-              <TotalIssueRow 
-                label="Resolved (Not Ext.)" 
-                value={employeeTotals.resolvedNotExtended}
-                total={employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                  employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open}
-              />
-              <TotalIssueRow 
-                label="Resolved (Ext.)" 
-                value={employeeTotals.resolvedExtended}
-                total={employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                  employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open}
-              />
-              <TotalIssueRow 
-                label="Partially Resolved" 
-                value={employeeTotals.partiallyResolved}
-                total={employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                  employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open}
-              />
-              <TotalIssueRow 
-                label="In Progress" 
-                value={employeeTotals.inProgress}
-                total={employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                  employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open}
-              />
-              <TotalIssueRow 
-                label="Open" 
-                value={employeeTotals.open}
-                total={employeeTotals.resolvedNotExtended + employeeTotals.resolvedExtended + 
-                  employeeTotals.partiallyResolved + employeeTotals.inProgress + employeeTotals.open}
-              />
-            </div>
-          </div>
         </div>
       )}
     </div>
@@ -954,43 +724,6 @@ function DepartmentMobileCards({
                     <MetricBox label="Morning" value={dept.shifts.morning} color="gray" />
                     <MetricBox label="Afternoon" value={dept.shifts.afternoon} color="gray" />
                     <MetricBox label="Night" value={dept.shifts.night} color="gray" />
-                  </div>
-                </div>
-
-                {/* Issues */}
-                <div>
-                  <h5 className="text-xs text-gray-500 mb-2">Issue / Ticket Status</h5>
-                  <div className="space-y-2">
-                    <IssueRow 
-                      label="Resolved (Not Ext.)" 
-                      value={dept.issueStats.resolvedNotExtended} 
-                      total={totalIssues}
-                      color="green"
-                    />
-                    <IssueRow 
-                      label="Resolved (Ext.)" 
-                      value={dept.issueStats.resolvedExtended} 
-                      total={totalIssues}
-                      color="blue"
-                    />
-                    <IssueRow 
-                      label="Partially Resolved" 
-                      value={dept.issueStats.partiallyResolved} 
-                      total={totalIssues}
-                      color="yellow"
-                    />
-                    <IssueRow 
-                      label="In Progress" 
-                      value={dept.issueStats.inProgress} 
-                      total={totalIssues}
-                      color="purple"
-                    />
-                    <IssueRow 
-                      label="Open" 
-                      value={dept.issueStats.open} 
-                      total={totalIssues}
-                      color="red"
-                    />
                   </div>
                 </div>
               </div>
@@ -1081,43 +814,6 @@ function DepartmentMobileCards({
               </div>
             </div>
           </div>
-
-          {/* Issues */}
-          <div>
-            <div className="text-xs text-gray-600 mb-1">Issues Total</div>
-            <div className="space-y-1">
-              <TotalIssueRow 
-                label="Resolved (Not Ext.)" 
-                value={departmentTotals.resolvedNotExtended}
-                total={departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                  departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open}
-              />
-              <TotalIssueRow 
-                label="Resolved (Ext.)" 
-                value={departmentTotals.resolvedExtended}
-                total={departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                  departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open}
-              />
-              <TotalIssueRow 
-                label="Partially Resolved" 
-                value={departmentTotals.partiallyResolved}
-                total={departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                  departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open}
-              />
-              <TotalIssueRow 
-                label="In Progress" 
-                value={departmentTotals.inProgress}
-                total={departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                  departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open}
-              />
-              <TotalIssueRow 
-                label="Open" 
-                value={departmentTotals.open}
-                total={departmentTotals.resolvedNotExtended + departmentTotals.resolvedExtended + 
-                  departmentTotals.partiallyResolved + departmentTotals.inProgress + departmentTotals.open}
-              />
-            </div>
-          </div>
         </div>
       )}
     </div>
@@ -1130,48 +826,6 @@ function MetricBox({ label, value, color }: { label: string; value: number; colo
     <div className="bg-gray-50 border border-gray-200 rounded p-2 text-center">
       <div className="text-xs text-gray-600 mb-1">{label}</div>
       <div className="text-sm text-gray-900">{value}</div>
-    </div>
-  );
-}
-
-function IssueRow({ 
-  label, 
-  value, 
-  total,
-  color 
-}: { 
-  label: string; 
-  value: number; 
-  total: number;
-  color: 'green' | 'blue' | 'yellow' | 'purple' | 'red';
-}) {
-  const colorClasses = {
-    green: 'bg-green-50 border-green-200 text-green-700',
-    blue: 'bg-blue-50 border-blue-200 text-blue-700',
-    yellow: 'bg-yellow-50 border-yellow-200 text-yellow-700',
-    purple: 'bg-purple-50 border-purple-200 text-purple-700',
-    red: 'bg-red-50 border-red-200 text-red-700',
-  };
-
-  return (
-    <div className={`flex items-center justify-between p-2 rounded border ${colorClasses[color]}`}>
-      <span className="text-xs">{label}</span>
-      <div className="flex items-center gap-2">
-        <span className="text-sm">{value}</span>
-        <span className="text-xs">({calculatePercentage(value, total)}%)</span>
-      </div>
-    </div>
-  );
-}
-
-function TotalIssueRow({ label, value, total }: { label: string; value: number; total: number }) {
-  return (
-    <div className="flex items-center justify-between text-xs bg-white rounded p-2 border border-gray-200">
-      <span className="text-gray-600">{label}</span>
-      <div className="flex items-center gap-2">
-        <span className="text-gray-900"><strong>{value}</strong></span>
-        <span className="text-gray-600">({calculatePercentage(value, total)}%)</span>
-      </div>
     </div>
   );
 }
