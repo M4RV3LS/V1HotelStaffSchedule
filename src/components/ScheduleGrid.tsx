@@ -203,7 +203,7 @@ export function ScheduleGrid({
           ...employee.schedule[dateKey].shifts,
         ];
 
-        // If selecting "All Day", replace all shifts with just "All Day"
+        // Requirement 1: If selecting "All Day", replace all shifts with just "All Day"
         if (val === "All Day") {
           return {
             ...employee,
@@ -347,7 +347,6 @@ export function ScheduleGrid({
                     key={date.toISOString()}
                     className={cn(
                       "px-4 py-4 text-center border-b border-r border-gray-100 min-w-[160px]",
-                      // Requirement 1: Top, Left, and Right border for header cell of Today's column
                       isToday
                         ? "border-t-2 border-l-2 border-r-2 border-[#EA0029] bg-red-50/10"
                         : !isInMonth && "bg-gray-50/50",
@@ -394,7 +393,6 @@ export function ScheduleGrid({
                   (employee, idx) => {
                     const isFirstInGroup = idx === 0;
 
-                    // Helper to determine if this is the absolute last row in the table
                     const isLastRow =
                       deptIdx === departments.length - 1 &&
                       idx ===
@@ -443,8 +441,6 @@ export function ScheduleGrid({
                           const cellContainerClass =
                             "w-full h-40";
 
-                          // Requirement 1: Apply Left/Right borders for Today's column body cells.
-                          // Apply Bottom border ONLY if it is the last row to close the "outer border".
                           const todayBorderClasses = isToday
                             ? cn(
                                 "border-l-2 border-r-2 border-[#EA0029] bg-red-50/5",
@@ -628,22 +624,12 @@ export function ScheduleGrid({
                                                               s !==
                                                                 shift;
 
-                                                            // Disable "All Day" if there are multiple shifts or other shifts exist
-                                                            const disableAllDay =
-                                                              s ===
-                                                                "All Day" &&
-                                                              (entry
-                                                                .shifts
-                                                                .length >
-                                                                1 ||
-                                                                (entry
-                                                                  .shifts
-                                                                  .length ===
-                                                                  1 &&
-                                                                  shift !==
-                                                                    "All Day"));
+                                                            // Requirement 1: Modified Logic
+                                                            // We no longer disable "All Day" based on existing shifts.
+                                                            // Selecting it will simply replace others (handled in updateShift).
+                                                            // We still disable specific regular shifts if they are already picked.
 
-                                                            // Disable other shifts if current selection is "All Day"
+                                                            // Only disable other shifts if "All Day" is currently SELECTED in this specific dropdown
                                                             const disableOthers =
                                                               shift ===
                                                                 "All Day" &&
@@ -660,15 +646,12 @@ export function ScheduleGrid({
                                                                 }
                                                                 disabled={
                                                                   isSelectedElsewhere ||
-                                                                  disableAllDay ||
                                                                   disableOthers
                                                                 }
                                                               >
                                                                 {
                                                                   s
                                                                 }
-                                                                {disableAllDay &&
-                                                                  " (Remove other shifts first)"}
                                                               </SelectItem>
                                                             );
                                                           },

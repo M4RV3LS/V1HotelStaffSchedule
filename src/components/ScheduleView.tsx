@@ -16,6 +16,7 @@ import {
 } from "./FilterCombobox";
 import { MonthYearPicker } from "./MonthYearPicker";
 import { ExportPreviewDialog } from "./ExportPreviewDialog";
+import { TodayOnDuty } from "./TodayOnDuty";
 import {
   generateMockScheduleData,
   hasScheduleForMonth,
@@ -110,7 +111,7 @@ export function ScheduleView({
   const canGoPrevious = currentWeekStart > 0;
   const canGoNext = currentWeekStart < totalWeeks - 1;
 
-  // Check if current month is allowed (Requirement 4)
+  // Check if current month is allowed (Requirement 4 from previous context)
   const currentMonthAllowed = isMonthAllowed(selectedMonth);
 
   // --- Handlers ---
@@ -280,7 +281,29 @@ export function ScheduleView({
         </div>
       </div>
 
-      {/* 2. Controls Section - Now visible even without schedule (Requirement 3) */}
+      {/* 2. Content */}
+      <div className="flex-1 overflow-auto p-6 flex flex-col">
+        {!scheduleExists ? (
+          <div className="h-full">
+            <EmptyState
+              month={monthYearDisplay}
+              onCreateSchedule={handleCreateSchedule}
+              isCreating={isCreating}
+              isAllowed={currentMonthAllowed}
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {/* Requirement 2: Who is on duty today Section */}
+            {/* We only show this if the selected month actually contains "Today" to avoid confusion, 
+                or you can show it always if you want a dashboard feel regardless of selected month. 
+                Here I'll show it always using current data from the loaded month if available. */}
+            <TodayOnDuty scheduleData={filteredScheduleData} />
+          </div>
+        )}
+      </div>
+
+      {/* 3. Controls Section */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 shrink-0 shadow-sm z-30 flex items-center gap-6">
         <div className="shrink-0">
           <MonthYearPicker
@@ -323,28 +346,15 @@ export function ScheduleView({
           </>
         )}
       </div>
-
-      {/* 3. Content */}
-      <div className="flex-1 overflow-hidden relative flex flex-col">
-        {!scheduleExists ? (
-          <div className="h-full overflow-auto">
-            <EmptyState
-              month={monthYearDisplay}
-              onCreateSchedule={handleCreateSchedule}
-              isCreating={isCreating}
-              isAllowed={currentMonthAllowed}
-            />
-          </div>
-        ) : (
-          <ScheduleGrid
-            weekDates={currentWeekDates}
-            scheduleData={filteredScheduleData}
-            setScheduleData={setScheduleData}
-            isEditMode={isEditMode}
-            hasActiveFilters={selectedFilters.length > 0}
-            selectedMonth={selectedMonth}
-          />
-        )}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <ScheduleGrid
+          weekDates={currentWeekDates}
+          scheduleData={filteredScheduleData}
+          setScheduleData={setScheduleData}
+          isEditMode={isEditMode}
+          hasActiveFilters={selectedFilters.length > 0}
+          selectedMonth={selectedMonth}
+        />
       </div>
 
       {/* 4. Footer Legend */}
@@ -355,7 +365,7 @@ export function ScheduleView({
         open={isExportDialogOpen}
         onOpenChange={setIsExportDialogOpen}
         data={filteredScheduleData}
-        weekDates={currentWeekDates} // Note: Dialog internally generates month dates now, but prop remains for type safety
+        weekDates={currentWeekDates}
         month={selectedMonth}
         onConfirm={handleConfirmExport}
       />

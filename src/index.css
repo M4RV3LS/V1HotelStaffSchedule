@@ -6,6 +6,7 @@
       --tw-translate-y: 0;
       --tw-translate-z: 0;
       --tw-space-y-reverse: 0;
+      --tw-divide-y-reverse: 0;
       --tw-border-style: solid;
       --tw-leading: initial;
       --tw-font-weight: initial;
@@ -83,6 +84,9 @@
     --color-teal-400: oklch(.777 .152 181.912);
     --color-teal-500: oklch(.704 .14 182.503);
     --color-teal-800: oklch(.437 .078 188.216);
+    --color-blue-50: oklch(.97 .014 254.604);
+    --color-blue-100: oklch(.932 .032 255.585);
+    --color-blue-700: oklch(.488 .243 264.376);
     --color-indigo-50: oklch(.962 .018 272.314);
     --color-indigo-300: oklch(.785 .115 274.713);
     --color-indigo-400: oklch(.673 .182 276.935);
@@ -119,6 +123,8 @@
     --text-xl--line-height: calc(1.75 / 1.25);
     --text-2xl: 1.5rem;
     --text-2xl--line-height: calc(2 / 1.5);
+    --text-3xl: 1.875rem;
+    --text-3xl--line-height: calc(2.25 / 1.875);
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
@@ -467,10 +473,6 @@
     pointer-events: none;
   }
 
-  .visible {
-    visibility: visible;
-  }
-
   .sr-only {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
@@ -571,6 +573,10 @@
     z-index: 50;
   }
 
+  .col-span-full {
+    grid-column: 1 / -1;
+  }
+
   .col-start-2 {
     grid-column-start: 2;
   }
@@ -639,6 +645,10 @@
     margin-bottom: calc(var(--spacing) * 3);
   }
 
+  .mb-4 {
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+
   .mb-6 {
     margin-bottom: calc(var(--spacing) * 6);
   }
@@ -679,6 +689,10 @@
     display: table;
   }
 
+  .aspect-square {
+    aspect-ratio: 1;
+  }
+
   .size-3\.5 {
     width: calc(var(--spacing) * 3.5);
     height: calc(var(--spacing) * 3.5);
@@ -692,6 +706,16 @@
   .size-9 {
     width: calc(var(--spacing) * 9);
     height: calc(var(--spacing) * 9);
+  }
+
+  .size-10 {
+    width: calc(var(--spacing) * 10);
+    height: calc(var(--spacing) * 10);
+  }
+
+  .size-full {
+    width: 100%;
+    height: 100%;
   }
 
   .h-1\.5 {
@@ -878,6 +902,10 @@
     max-width: var(--container-md);
   }
 
+  .min-w-0 {
+    min-width: calc(var(--spacing) * 0);
+  }
+
   .min-w-\[8rem\] {
     min-width: 8rem;
   }
@@ -971,6 +999,10 @@
 
   .auto-rows-min {
     grid-auto-rows: min-content;
+  }
+
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 
   .grid-cols-2 {
@@ -1071,6 +1103,18 @@
 
   .gap-y-4 {
     row-gap: calc(var(--spacing) * 4);
+  }
+
+  :where(.divide-y > :not(:last-child)) {
+    --tw-divide-y-reverse: 0;
+    border-bottom-style: var(--tw-border-style);
+    border-top-style: var(--tw-border-style);
+    border-top-width: calc(1px * var(--tw-divide-y-reverse));
+    border-bottom-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
+  }
+
+  :where(.divide-gray-100 > :not(:last-child)) {
+    border-color: var(--color-gray-100);
   }
 
   .self-start {
@@ -1180,6 +1224,11 @@
     border-left-width: 2px;
   }
 
+  .border-dashed {
+    --tw-border-style: dashed;
+    border-style: dashed;
+  }
+
   .border-none {
     --tw-border-style: none;
     border-style: none;
@@ -1187,6 +1236,10 @@
 
   .border-\[\#EA0029\] {
     border-color: #ea0029;
+  }
+
+  .border-blue-100 {
+    border-color: var(--color-blue-100);
   }
 
   .border-gray-100 {
@@ -1275,6 +1328,10 @@
     background-color: #ea0029;
   }
 
+  .bg-\[\#EA0029\]\/10 {
+    background-color: oklab(59.0496% .217454 .0995547 / .1);
+  }
+
   .bg-background {
     background-color: var(--background);
   }
@@ -1297,6 +1354,10 @@
     .bg-black\/50 {
       background-color: color-mix(in oklab, var(--color-black) 50%, transparent);
     }
+  }
+
+  .bg-blue-50 {
+    background-color: var(--color-blue-50);
   }
 
   .bg-border {
@@ -1375,6 +1436,10 @@
 
   .bg-input-background {
     background-color: var(--input-background);
+  }
+
+  .bg-muted {
+    background-color: var(--muted);
   }
 
   .bg-orange-50 {
@@ -1465,6 +1530,16 @@
     }
   }
 
+  .bg-white\/20 {
+    background-color: #fff3;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-white\/20 {
+      background-color: color-mix(in oklab, var(--color-white) 20%, transparent);
+    }
+  }
+
   .bg-yellow-50 {
     background-color: var(--color-yellow-50);
   }
@@ -1487,6 +1562,10 @@
 
   .p-2 {
     padding: calc(var(--spacing) * 2);
+  }
+
+  .p-2\.5 {
+    padding: calc(var(--spacing) * 2.5);
   }
 
   .p-3 {
@@ -1650,6 +1729,11 @@
     line-height: var(--tw-leading, var(--text-2xl--line-height));
   }
 
+  .text-3xl {
+    font-size: var(--text-3xl);
+    line-height: var(--tw-leading, var(--text-3xl--line-height));
+  }
+
   .text-base {
     font-size: var(--text-base);
     line-height: var(--tw-leading, var(--text-base--line-height));
@@ -1735,6 +1819,10 @@
 
   .text-\[\#EA0029\] {
     color: #ea0029;
+  }
+
+  .text-blue-700 {
+    color: var(--color-blue-700);
   }
 
   .text-card-foreground {
@@ -1831,6 +1919,16 @@
 
   .text-white {
     color: var(--color-white);
+  }
+
+  .text-white\/80 {
+    color: #fffc;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .text-white\/80 {
+      color: color-mix(in oklab, var(--color-white) 80%, transparent);
+    }
   }
 
   .text-yellow-800 {
@@ -2481,6 +2579,12 @@
     }
   }
 
+  @media (width >= 48rem) {
+    .md\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   @media (width >= 64rem) {
     .lg\:block {
       display: block;
@@ -2490,6 +2594,12 @@
   @media (width >= 64rem) {
     .lg\:hidden {
       display: none;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .lg\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
@@ -2704,6 +2814,12 @@ html {
 }
 
 @property --tw-space-y-reverse {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --tw-divide-y-reverse {
   syntax: "*";
   inherits: false;
   initial-value: 0;
