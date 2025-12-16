@@ -632,89 +632,97 @@ function EmployeeMobileCards({
       })}
 
       {/* Totals Card */}
-      {employeeTotals && (
-        <div className="border-2 border-[#EA0029] rounded-lg bg-gray-50 p-4">
-          <h4 className="text-sm text-gray-900 mb-3">
-            <strong>TOTAL - All Employees</strong>
-          </h4>
-          
-          {/* Attendance */}
-          <div className="mb-3">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs text-gray-600">Attendance</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-green-50 border border-green-200 rounded p-2">
-                <div className="text-xs text-gray-600">Present</div>
-                <div className="text-sm text-green-700">
-                  <strong>{employeeTotals.totalPresent}</strong>
-                  <span className="text-xs ml-1">
-                    ({calculatePercentage(
-                      employeeTotals.totalPresent,
-                      employeeTotals.totalPresent + employeeTotals.totalAbsent
-                    )}%)
-                  </span>
+      {employeeTotals && (() => {
+        const totalAttendance = employeeTotals.totalPresent + employeeTotals.totalAbsent;
+        const totalShifts = employeeTotals.morning + employeeTotals.afternoon + employeeTotals.middle + employeeTotals.night + employeeTotals.longShift;
+        
+        return (
+          <div className="border-2 border-[#EA0029] rounded-lg bg-gray-50 p-4">
+            <h4 className="text-sm text-gray-900 mb-3">
+              <strong>TOTAL - All Employees</strong>
+            </h4>
+            
+            {/* Attendance */}
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-gray-600">Attendance</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-green-50 border border-green-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Present</div>
+                  <div className="text-sm text-green-700">
+                    <strong>{employeeTotals.totalPresent}</strong>
+                    <span className="text-xs ml-1">
+                      ({calculatePercentage(employeeTotals.totalPresent, totalAttendance)}%)
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Absent</div>
+                  <div className="text-sm text-red-700">
+                    <strong>{employeeTotals.totalAbsent}</strong>
+                    <span className="text-xs ml-1">
+                      ({calculatePercentage(employeeTotals.totalAbsent, totalAttendance)}%)
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="bg-red-50 border border-red-200 rounded p-2">
-                <div className="text-xs text-gray-600">Absent</div>
-                <div className="text-sm text-red-700">
-                  <strong>{employeeTotals.totalAbsent}</strong>
-                  <span className="text-xs ml-1">
-                    ({calculatePercentage(
-                      employeeTotals.totalAbsent,
-                      employeeTotals.totalPresent + employeeTotals.totalAbsent
-                    )}%)
-                  </span>
-                </div>
-              </div>
             </div>
-          </div>
 
-          {/* Shifts */}
-          <div className="mb-3">
-            <div className="text-xs text-gray-600 mb-1">Shifts</div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-white border border-gray-200 rounded p-2">
-                <div className="text-xs text-gray-600">Morning</div>
-                <div className="text-sm text-gray-900">
-                  <strong>{employeeTotals.morning}</strong>
-                  <div className="text-xs text-gray-600">
-                    ({calculatePercentage(
-                      employeeTotals.morning,
-                      employeeTotals.morning + employeeTotals.afternoon + employeeTotals.night
-                    )}%)
+            {/* Shifts */}
+            <div>
+              <div className="text-xs text-gray-600 mb-1">Shifts</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Morning</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{employeeTotals.morning}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(employeeTotals.morning, totalShifts)}%)
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded p-2">
-                <div className="text-xs text-gray-600">Afternoon</div>
-                <div className="text-sm text-gray-900">
-                  <strong>{employeeTotals.afternoon}</strong>
-                  <div className="text-xs text-gray-600">
-                    ({calculatePercentage(
-                      employeeTotals.afternoon,
-                      employeeTotals.morning + employeeTotals.afternoon + employeeTotals.night
-                    )}%)
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Afternoon</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{employeeTotals.afternoon}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(employeeTotals.afternoon, totalShifts)}%)
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded p-2">
-                <div className="text-xs text-gray-600">Night</div>
-                <div className="text-sm text-gray-900">
-                  <strong>{employeeTotals.night}</strong>
-                  <div className="text-xs text-gray-600">
-                    ({calculatePercentage(
-                      employeeTotals.night,
-                      employeeTotals.morning + employeeTotals.afternoon + employeeTotals.night
-                    )}%)
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Middle</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{employeeTotals.middle}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(employeeTotals.middle, totalShifts)}%)
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Night</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{employeeTotals.night}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(employeeTotals.night, totalShifts)}%)
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Long Shift</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{employeeTotals.longShift}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(employeeTotals.longShift, totalShifts)}%)
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
@@ -739,49 +747,82 @@ function DepartmentMobileCards({
   return (
     <div className="space-y-3">
       {departmentReports.map((dept, idx) => {
-        const totalIssues = dept.issueStats.resolvedNotExtended + dept.issueStats.resolvedExtended + 
-          dept.issueStats.partiallyResolved + dept.issueStats.inProgress + dept.issueStats.open;
+        const totalAttendance = dept.totalPresent + dept.totalAbsent;
+        const totalShifts = dept.shifts.morning + dept.shifts.afternoon + dept.shifts.middle + dept.shifts.night + dept.shifts.longShift;
         const isExpanded = expandedIndex === idx;
 
         return (
           <div key={dept.department} className="border border-gray-200 rounded-lg bg-white">
             {/* Card Header */}
             <div 
-              className="p-4 cursor-pointer"
+              className="p-3 cursor-pointer"
               onClick={() => setExpandedIndex(isExpanded ? null : idx)}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h4 className="text-sm text-gray-900">{dept.department}</h4>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm text-gray-900 truncate">{dept.department}</h4>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <span className="text-xs text-gray-500">Present/Absent</span>
-                    <div className="flex gap-2 mt-0.5">
-                      <span className="text-sm text-green-600">{dept.totalPresent}</span>
-                      <span className="text-gray-300">/</span>
-                      <span className="text-sm text-red-600">{dept.totalAbsent}</span>
-                    </div>
-                  </div>
-                  {isExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  )}
-                </div>
+                {isExpanded ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                )}
               </div>
             </div>
 
             {/* Expanded Details */}
             {isExpanded && (
-              <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
+              <div className="px-3 pb-3 space-y-3 border-t border-gray-100">
+                {/* Attendance */}
+                <div className="pt-3">
+                  <h5 className="text-xs text-gray-500 mb-2">Attendance</h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-green-50 border border-green-200 rounded p-2">
+                      <div className="text-xs text-gray-600">Present</div>
+                      <div className="text-sm text-green-700 mt-1">
+                        <strong>{dept.totalPresent}</strong>
+                        <span className="text-xs ml-1">({calculatePercentage(dept.totalPresent, totalAttendance)}%)</span>
+                      </div>
+                    </div>
+                    <div className="bg-red-50 border border-red-200 rounded p-2">
+                      <div className="text-xs text-gray-600">Absent</div>
+                      <div className="text-sm text-red-700 mt-1">
+                        <strong>{dept.totalAbsent}</strong>
+                        <span className="text-xs ml-1">({calculatePercentage(dept.totalAbsent, totalAttendance)}%)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Shifts */}
                 <div>
-                  <h5 className="text-xs text-gray-500 mb-2 mt-3">Shifts</h5>
-                  <div className="grid grid-cols-3 gap-2">
-                    <MetricBox label="Morning" value={dept.shifts.morning} color="gray" />
-                    <MetricBox label="Afternoon" value={dept.shifts.afternoon} color="gray" />
-                    <MetricBox label="Night" value={dept.shifts.night} color="gray" />
+                  <h5 className="text-xs text-gray-500 mb-2">Shifts</h5>
+                  <div className="grid grid-cols-2 gap-2">
+                    <MobileShiftBox 
+                      label="Morning" 
+                      value={dept.shifts.morning} 
+                      percentage={calculatePercentage(dept.shifts.morning, totalShifts)} 
+                    />
+                    <MobileShiftBox 
+                      label="Afternoon" 
+                      value={dept.shifts.afternoon} 
+                      percentage={calculatePercentage(dept.shifts.afternoon, totalShifts)} 
+                    />
+                    <MobileShiftBox 
+                      label="Middle" 
+                      value={dept.shifts.middle} 
+                      percentage={calculatePercentage(dept.shifts.middle, totalShifts)} 
+                    />
+                    <MobileShiftBox 
+                      label="Night" 
+                      value={dept.shifts.night} 
+                      percentage={calculatePercentage(dept.shifts.night, totalShifts)} 
+                    />
+                    <MobileShiftBox 
+                      label="Long Shift" 
+                      value={dept.shifts.longShift} 
+                      percentage={calculatePercentage(dept.shifts.longShift, totalShifts)} 
+                    />
                   </div>
                 </div>
               </div>
@@ -791,89 +832,97 @@ function DepartmentMobileCards({
       })}
 
       {/* Totals Card */}
-      {departmentTotals && (
-        <div className="border-2 border-[#EA0029] rounded-lg bg-gray-50 p-4">
-          <h4 className="text-sm text-gray-900 mb-3">
-            <strong>TOTAL - All Departments</strong>
-          </h4>
-          
-          {/* Attendance */}
-          <div className="mb-3">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs text-gray-600">Attendance</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-green-50 border border-green-200 rounded p-2">
-                <div className="text-xs text-gray-600">Present</div>
-                <div className="text-sm text-green-700">
-                  <strong>{departmentTotals.totalPresent}</strong>
-                  <span className="text-xs ml-1">
-                    ({calculatePercentage(
-                      departmentTotals.totalPresent,
-                      departmentTotals.totalPresent + departmentTotals.totalAbsent
-                    )}%)
-                  </span>
+      {departmentTotals && (() => {
+        const totalAttendance = departmentTotals.totalPresent + departmentTotals.totalAbsent;
+        const totalShifts = departmentTotals.morning + departmentTotals.afternoon + departmentTotals.middle + departmentTotals.night + departmentTotals.longShift;
+        
+        return (
+          <div className="border-2 border-[#EA0029] rounded-lg bg-gray-50 p-4">
+            <h4 className="text-sm text-gray-900 mb-3">
+              <strong>TOTAL - All Departments</strong>
+            </h4>
+            
+            {/* Attendance */}
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-gray-600">Attendance</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-green-50 border border-green-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Present</div>
+                  <div className="text-sm text-green-700">
+                    <strong>{departmentTotals.totalPresent}</strong>
+                    <span className="text-xs ml-1">
+                      ({calculatePercentage(departmentTotals.totalPresent, totalAttendance)}%)
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Absent</div>
+                  <div className="text-sm text-red-700">
+                    <strong>{departmentTotals.totalAbsent}</strong>
+                    <span className="text-xs ml-1">
+                      ({calculatePercentage(departmentTotals.totalAbsent, totalAttendance)}%)
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="bg-red-50 border border-red-200 rounded p-2">
-                <div className="text-xs text-gray-600">Absent</div>
-                <div className="text-sm text-red-700">
-                  <strong>{departmentTotals.totalAbsent}</strong>
-                  <span className="text-xs ml-1">
-                    ({calculatePercentage(
-                      departmentTotals.totalAbsent,
-                      departmentTotals.totalPresent + departmentTotals.totalAbsent
-                    )}%)
-                  </span>
-                </div>
-              </div>
             </div>
-          </div>
 
-          {/* Shifts */}
-          <div className="mb-3">
-            <div className="text-xs text-gray-600 mb-1">Shifts</div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-white border border-gray-200 rounded p-2">
-                <div className="text-xs text-gray-600">Morning</div>
-                <div className="text-sm text-gray-900">
-                  <strong>{departmentTotals.morning}</strong>
-                  <div className="text-xs text-gray-600">
-                    ({calculatePercentage(
-                      departmentTotals.morning,
-                      departmentTotals.morning + departmentTotals.afternoon + departmentTotals.night
-                    )}%)
+            {/* Shifts */}
+            <div>
+              <div className="text-xs text-gray-600 mb-1">Shifts</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Morning</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{departmentTotals.morning}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(departmentTotals.morning, totalShifts)}%)
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded p-2">
-                <div className="text-xs text-gray-600">Afternoon</div>
-                <div className="text-sm text-gray-900">
-                  <strong>{departmentTotals.afternoon}</strong>
-                  <div className="text-xs text-gray-600">
-                    ({calculatePercentage(
-                      departmentTotals.afternoon,
-                      departmentTotals.morning + departmentTotals.afternoon + departmentTotals.night
-                    )}%)
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Afternoon</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{departmentTotals.afternoon}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(departmentTotals.afternoon, totalShifts)}%)
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded p-2">
-                <div className="text-xs text-gray-600">Night</div>
-                <div className="text-sm text-gray-900">
-                  <strong>{departmentTotals.night}</strong>
-                  <div className="text-xs text-gray-600">
-                    ({calculatePercentage(
-                      departmentTotals.night,
-                      departmentTotals.morning + departmentTotals.afternoon + departmentTotals.night
-                    )}%)
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Middle</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{departmentTotals.middle}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(departmentTotals.middle, totalShifts)}%)
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Night</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{departmentTotals.night}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(departmentTotals.night, totalShifts)}%)
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white border border-gray-200 rounded p-2">
+                  <div className="text-xs text-gray-600">Long Shift</div>
+                  <div className="text-sm text-gray-900">
+                    <strong>{departmentTotals.longShift}</strong>
+                    <div className="text-xs text-gray-600">
+                      ({calculatePercentage(departmentTotals.longShift, totalShifts)}%)
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

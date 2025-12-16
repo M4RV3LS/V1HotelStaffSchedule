@@ -108,10 +108,10 @@ export function generateEmployeeReports(
 
     // Generate shift distribution
     const totalShifts = totalPresent; // Each present day has one shift
-    const morning = Math.floor(totalShifts * (0.3 + Math.random() * 0.2));
-    const afternoon = Math.floor(totalShifts * (0.3 + Math.random() * 0.2));
-    const middle = Math.floor(totalShifts * (0.1 + Math.random() * 0.1));
-    const night = Math.floor(totalShifts * (0.1 + Math.random() * 0.1));
+    const morning = Math.floor(totalShifts * (0.2 + Math.random() * 0.15));
+    const afternoon = Math.floor(totalShifts * (0.2 + Math.random() * 0.15));
+    const middle = Math.floor(totalShifts * (0.15 + Math.random() * 0.1));
+    const night = Math.floor(totalShifts * (0.15 + Math.random() * 0.1));
     const longShift = totalShifts - morning - afternoon - middle - night;
 
     return {
