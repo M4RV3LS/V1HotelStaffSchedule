@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Calendar, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { FilterCombobox, SelectedFilter } from './FilterCombobox';
+import { DateRangePicker } from './DateRangePicker';
 import {
   generateEmployeeReports,
   generateDepartmentReports,
@@ -15,13 +16,22 @@ interface ReportViewProps {
 }
 
 export function ReportView({ selectedMonth }: ReportViewProps) {
-  const [startDate, setStartDate] = useState<Date>(
-    new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1)
-  );
-  const [endDate, setEndDate] = useState<Date>(
-    new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0)
-  );
+  // Default date range: First day of current month to today
+  const getDefaultDateRange = () => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { start: firstDay, end: today };
+  };
+
+  const defaultRange = getDefaultDateRange();
+  const [startDate, setStartDate] = useState<Date>(defaultRange.start);
+  const [endDate, setEndDate] = useState<Date>(defaultRange.end);
   const [selectedFilters, setSelectedFilters] = useState<SelectedFilter[]>([]);
+
+  const handleDateChange = (newStartDate: Date, newEndDate: Date) => {
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+  };
 
   // Extract unique departments, designations, and staff from mock data
   const allDepartments = ['Front Desk', 'Housekeeping', 'Kitchen', 'Maintenance'];
@@ -126,14 +136,6 @@ export function ReportView({ selectedMonth }: ReportViewProps) {
     return totals;
   }, [departmentReports]);
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-  };
-
   const handleExport = () => {
     // Mock export functionality
     alert('Export functionality would generate CSV/Excel file with report data');
@@ -146,32 +148,25 @@ export function ReportView({ selectedMonth }: ReportViewProps) {
         <div>
           <h2 className="text-gray-900">Staff Performance Report</h2>
           <p className="text-sm text-gray-500 mt-1">
-            {formatDate(startDate)} - {formatDate(endDate)}
+            {startDate.toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric' 
+            })} - {endDate.toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric' 
+            })}
           </p>
         </div>
         <div className="flex flex-col gap-3">
           {/* Date Range Picker */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded bg-white w-full sm:w-auto">
-              <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
-              <input
-                type="date"
-                value={startDate.toISOString().split('T')[0]}
-                onChange={(e) => setStartDate(new Date(e.target.value))}
-                className="text-sm border-none outline-none bg-transparent w-full"
-              />
-            </div>
-            <span className="text-gray-400 text-center sm:text-left">to</span>
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded bg-white w-full sm:w-auto">
-              <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
-              <input
-                type="date"
-                value={endDate.toISOString().split('T')[0]}
-                onChange={(e) => setEndDate(new Date(e.target.value))}
-                className="text-sm border-none outline-none bg-transparent w-full"
-              />
-            </div>
-          </div>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onDateChange={handleDateChange}
+            className="w-full"
+          />
 
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Filter Combobox */}

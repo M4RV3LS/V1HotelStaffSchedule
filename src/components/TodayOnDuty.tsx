@@ -93,45 +93,20 @@ export function TodayOnDuty({
             {formattedDate} • {greeting}
           </p>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        {/* Metric Cards */}
-        <Card className="bg-[#EA0029] text-white border-none shadow-md">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-white/80 text-xs font-medium uppercase tracking-wider">
-                On Duty
-              </p>
-              <p className="text-3xl font-bold mt-1">
-                {presentCount}
-              </p>
-            </div>
-            <div className="bg-white/20 p-2.5 rounded-full">
-              <UserCheck className="w-6 h-6 text-white" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white border-gray-200 shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">
-                Total Staff
-              </p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
-                {totalStaff}
-              </p>
-            </div>
-            <div className="bg-gray-100 p-2.5 rounded-full">
-              <Users className="w-6 h-6 text-gray-500" />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Merged tag for on duty / total employee */}
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm font-medium border border-gray-200">
+            <Users className="w-4 h-4" />
+            <span className="text-xs text-gray-500">On Duty:</span>
+            <span className="text-[#EA0029] font-semibold">{presentCount}</span>
+            <span className="text-gray-400">/</span>
+            <span>{totalStaff}</span>
+          </span>
+        </div>
       </div>
 
       {/* Staff List Grouped by Department */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {Object.keys(groupedByDept).length > 0 ? (
           Object.entries(groupedByDept).map(
             ([dept, employees]) => (

@@ -167,26 +167,65 @@ export function ScheduleGrid({
     );
   };
 
+  // Helper function to calculate default shift for an employee
+  const getDefaultShift = (
+    employeeId: string,
+    dateKey: string,
+  ): string => {
+    // Extract employee index from id like "staff-0", "staff-1", etc.
+    const employeeIndex =
+      parseInt(employeeId.split("-")[1]) || 0;
+
+    // Get the day from the date
+    const date = new Date(dateKey);
+    const day = date.getDate();
+
+    // Use the same rotation logic as in generateMockScheduleData
+    const shiftIndex =
+      (employeeIndex + day) % availableShifts.length;
+    return availableShifts[shiftIndex];
+  };
+
   const updateAttendance = (
     employeeId: string,
     dateKey: string,
     val: string,
   ) => {
     setScheduleData(
-      scheduleData.map((employee) =>
-        employee.id === employeeId
-          ? {
-              ...employee,
-              schedule: {
-                ...employee.schedule,
-                [dateKey]: {
-                  ...employee.schedule[dateKey],
-                  attendance: val as any,
-                },
-              },
-            }
-          : employee,
-      ),
+      scheduleData.map((employee) => {
+        if (employee.id !== employeeId) return employee;
+
+        const currentSchedule = employee.schedule[dateKey];
+        let updatedShifts = currentSchedule.shifts;
+
+        // If changing to "Present" and no shifts are allocated, assign default shift
+        if (
+          val === "Present" &&
+          (!updatedShifts || updatedShifts.length === 0)
+        ) {
+          const defaultShift = getDefaultShift(
+            employeeId,
+            dateKey,
+          );
+          updatedShifts = [defaultShift];
+        }
+
+        // If changing to "Absent", clear all shifts
+        if (val === "Absent") {
+          updatedShifts = [];
+        }
+
+        return {
+          ...employee,
+          schedule: {
+            ...employee.schedule,
+            [dateKey]: {
+              attendance: val as any,
+              shifts: updatedShifts,
+            },
+          },
+        };
+      }),
     );
   };
 
@@ -203,7 +242,7 @@ export function ScheduleGrid({
           ...employee.schedule[dateKey].shifts,
         ];
 
-        // Requirement 1: If selecting "All Day", replace all shifts with just "All Day"
+        // If selecting "All Day", replace all shifts with just "All Day"
         if (val === "All Day") {
           return {
             ...employee,
@@ -217,7 +256,7 @@ export function ScheduleGrid({
           };
         }
 
-        // If "All Day" exists and trying to change it to something else, allow it
+        // Standard update: replace the shift at the specific index
         currentShifts[index] = val;
         return {
           ...employee,
@@ -293,12 +332,19 @@ export function ScheduleGrid({
         const currentShifts = employee.schedule[
           dateKey
         ].shifts.filter((_, i) => i !== index);
+
+        // If all shifts are removed, automatically change attendance to "Absent"
+        const updatedAttendance =
+          currentShifts.length === 0
+            ? "Absent"
+            : employee.schedule[dateKey].attendance;
+
         return {
           ...employee,
           schedule: {
             ...employee.schedule,
             [dateKey]: {
-              ...employee.schedule[dateKey],
+              attendance: updatedAttendance,
               shifts: currentShifts,
             },
           },
@@ -332,9 +378,15 @@ export function ScheduleGrid({
           className="w-full border-collapse"
           style={{ tableLayout: "fixed" }}
         >
-          <thead className="sticky top-0 z-20 bg-white shadow-sm ring-1 ring-gray-100">
+          {/* FIX: Changed z-20 to z-[6] 
+              This lowers the header stack level so external dropdowns (usually z-10+) can cover it.
+          */}
+          <thead className="sticky top-0 z-[6] bg-white shadow-sm ring-1 ring-gray-100">
             <tr className="bg-white border-b border-gray-200 h-24">
-              <th className="sticky left-0 z-30 top-0 bg-gray-50/95 backdrop-blur px-6 py-4 text-left w-60 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)]">
+              {/* FIX: Changed z-30 to z-[10] 
+                  Keeps the corner above the header and left column, but low enough for external modals.
+              */}
+              <th className="sticky left-0 z-[10] top-0 bg-gray-50/95 backdrop-blur px-6 py-4 text-left w-60 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)]">
                 <div className="text-base font-bold text-gray-500 uppercase tracking-wider">
                   Employee Details
                 </div>
@@ -408,8 +460,10 @@ export function ScheduleGrid({
                             : "border-t border-gray-100",
                         )}
                       >
-                        {/* Name Column */}
-                        <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50/80 px-6 py-6 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] align-top h-40">
+                        {/* FIX: Changed z-10 to z-[5] 
+                            Keeps this column sticky above body content, but below the new z-[6] header.
+                        */}
+                        <td className="sticky left-0 z-[5] bg-white group-hover:bg-gray-50/80 px-6 py-6 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] align-top h-40">
                           <div className="h-full flex flex-col justify-start gap-1.5">
                             {isFirstInGroup && (
                               <div className="text-sm font-extrabold text-gray-400 uppercase tracking-widest mb-2">
@@ -624,18 +678,6 @@ export function ScheduleGrid({
                                                               s !==
                                                                 shift;
 
-                                                            // Requirement 1: Modified Logic
-                                                            // We no longer disable "All Day" based on existing shifts.
-                                                            // Selecting it will simply replace others (handled in updateShift).
-                                                            // We still disable specific regular shifts if they are already picked.
-
-                                                            // Only disable other shifts if "All Day" is currently SELECTED in this specific dropdown
-                                                            const disableOthers =
-                                                              shift ===
-                                                                "All Day" &&
-                                                              s !==
-                                                                "All Day";
-
                                                             return (
                                                               <SelectItem
                                                                 key={
@@ -645,8 +687,7 @@ export function ScheduleGrid({
                                                                   s
                                                                 }
                                                                 disabled={
-                                                                  isSelectedElsewhere ||
-                                                                  disableOthers
+                                                                  isSelectedElsewhere
                                                                 }
                                                               >
                                                                 {

@@ -104,7 +104,6 @@ export function MonthYearPicker({ selectedMonth, value, onChange }: MonthYearPic
                 {months.map((month, index) => {
                   const testDate = new Date(tempYear, index, 1);
                   const allowed = isMonthAllowed(testDate);
-                  const hasSchedule = hasScheduleForMonth(testDate);
                   const isSelected = tempMonth === index;
                   
                   return (
@@ -114,7 +113,7 @@ export function MonthYearPicker({ selectedMonth, value, onChange }: MonthYearPic
                       disabled={!allowed}
                       className={`px-3 py-2 text-xs rounded transition-colors relative ${
                         isSelected
-                          ? 'bg-[#EA0029] text-white'
+                          ? 'bg-[#EA0029] text-white font-bold'
                           : allowed
                             ? 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
@@ -122,33 +121,13 @@ export function MonthYearPicker({ selectedMonth, value, onChange }: MonthYearPic
                       title={!allowed ? 'Not available - Schedules auto-generate monthly' : ''}
                     >
                       {month.substring(0, 3)}
-                      {/* Requirement 5: Show indicator for existing schedules */}
-                      {allowed && hasSchedule && (
-                        <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full" title="Schedule exists"></span>
-                      )}
-                      {/* Show indicator for non-existent schedules within allowed range */}
-                      {allowed && !hasSchedule && (
-                        <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-orange-400 rounded-full" title="No schedule yet"></span>
-                      )}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Legend for indicators */}
-            <div className="flex items-center gap-4 text-xs text-gray-600 mb-3 pb-3 border-b border-gray-200">
-              <div className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span>Has schedule</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
-                <span>Not created</span>
-              </div>
-            </div>
-
-            {/* Requirement 2: Confirmation buttons */}
+            {/* Action Buttons */}
             <div className="flex gap-2">
               <button
                 onClick={handleCancel}
