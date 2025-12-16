@@ -90,14 +90,13 @@ export function CellContent({
   isEditMode: boolean;
 }) {
   const isAbsent = attendance === "Absent";
-
   if (isAbsent) {
     return (
       <div
         className={cn(
           "flex items-center justify-center w-full h-full rounded-sm transition-all",
           "bg-red-50/50 border border-red-100 text-red-500 font-bold",
-          "text-sm",
+          "text-xs sm:text-sm",
           isEditMode &&
             "cursor-pointer hover:ring-2 hover:ring-[#EA0029] hover:z-10",
         )}
@@ -106,8 +105,6 @@ export function CellContent({
       </div>
     );
   }
-
-  // Present with Shifts
   return (
     <div
       className={cn(
@@ -119,15 +116,14 @@ export function CellContent({
       {!isEditMode && (
         <div className="absolute inset-0 p-1 pointer-events-none" />
       )}
-
       {shifts.slice(0, 4).map((shift, idx) => {
         const style = getShiftStyle(shift);
         return (
           <div
             key={idx}
             className={cn(
-              "w-full flex-1 flex items-center justify-center rounded-sm font-medium border truncate px-2 py-1 z-10",
-              "text-sm",
+              "w-full flex-1 flex items-center justify-center rounded-sm font-semibold border truncate px-1 py-0.5 z-10",
+              "text-xs",
               style.bg,
               style.text,
               style.border,
@@ -167,20 +163,14 @@ export function ScheduleGrid({
     );
   };
 
-  // Helper function to calculate default shift for an employee
   const getDefaultShift = (
     employeeId: string,
     dateKey: string,
   ): string => {
-    // Extract employee index from id like "staff-0", "staff-1", etc.
     const employeeIndex =
       parseInt(employeeId.split("-")[1]) || 0;
-
-    // Get the day from the date
     const date = new Date(dateKey);
     const day = date.getDate();
-
-    // Use the same rotation logic as in generateMockScheduleData
     const shiftIndex =
       (employeeIndex + day) % availableShifts.length;
     return availableShifts[shiftIndex];
@@ -194,27 +184,16 @@ export function ScheduleGrid({
     setScheduleData(
       scheduleData.map((employee) => {
         if (employee.id !== employeeId) return employee;
-
-        const currentSchedule = employee.schedule[dateKey];
-        let updatedShifts = currentSchedule.shifts;
-
-        // If changing to "Present" and no shifts are allocated, assign default shift
+        let updatedShifts = employee.schedule[dateKey].shifts;
         if (
           val === "Present" &&
           (!updatedShifts || updatedShifts.length === 0)
         ) {
-          const defaultShift = getDefaultShift(
-            employeeId,
-            dateKey,
-          );
-          updatedShifts = [defaultShift];
+          updatedShifts = [
+            getDefaultShift(employeeId, dateKey),
+          ];
         }
-
-        // If changing to "Absent", clear all shifts
-        if (val === "Absent") {
-          updatedShifts = [];
-        }
-
+        if (val === "Absent") updatedShifts = [];
         return {
           ...employee,
           schedule: {
@@ -241,8 +220,6 @@ export function ScheduleGrid({
         const currentShifts = [
           ...employee.schedule[dateKey].shifts,
         ];
-
-        // If selecting "All Day", replace all shifts with just "All Day"
         if (val === "All Day") {
           return {
             ...employee,
@@ -255,8 +232,6 @@ export function ScheduleGrid({
             },
           };
         }
-
-        // Standard update: replace the shift at the specific index
         currentShifts[index] = val;
         return {
           ...employee,
@@ -279,32 +254,23 @@ export function ScheduleGrid({
         const currentShifts = [
           ...employee.schedule[dateKey].shifts,
         ];
-
-        // Cannot add shifts if "All Day" is already selected
-        if (currentShifts.includes("All Day")) {
-          return employee;
-        }
-
+        if (currentShifts.includes("All Day")) return employee;
         if (currentShifts.length < 4) {
           const firstUnused = availableShifts.find(
             (s) => !currentShifts.includes(s),
           );
           if (firstUnused) {
-            // If adding "All Day", replace all shifts with just "All Day"
             if (firstUnused === "All Day") {
-              currentShifts.length = 0; // Clear array
+              currentShifts.length = 0;
               currentShifts.push("All Day");
             } else {
               currentShifts.push(firstUnused);
             }
           } else {
-            // Find first non-All Day shift
             const regularShift = availableShifts.find(
               (s) => s !== "All Day",
             );
-            if (regularShift) {
-              currentShifts.push(regularShift);
-            }
+            if (regularShift) currentShifts.push(regularShift);
           }
         }
         return {
@@ -332,13 +298,10 @@ export function ScheduleGrid({
         const currentShifts = employee.schedule[
           dateKey
         ].shifts.filter((_, i) => i !== index);
-
-        // If all shifts are removed, automatically change attendance to "Absent"
         const updatedAttendance =
           currentShifts.length === 0
             ? "Absent"
             : employee.schedule[dateKey].attendance;
-
         return {
           ...employee,
           schedule: {
@@ -366,7 +329,7 @@ export function ScheduleGrid({
   const departments = Object.keys(groupedEmployees).sort();
 
   return (
-    <div className="w-full h-full overflow-auto bg-white">
+    <div className="w-full h-full overflow-auto bg-white scrollbar-thin relative">
       {scheduleData.length === 0 && hasActiveFilters ? (
         <div className="flex flex-col items-center justify-center h-full text-gray-500 py-12">
           <p className="text-xl font-medium">
@@ -378,19 +341,19 @@ export function ScheduleGrid({
           className="w-full border-collapse"
           style={{ tableLayout: "fixed" }}
         >
-          {/* FIX: Changed z-20 to z-[6] 
-              This lowers the header stack level so external dropdowns (usually z-10+) can cover it.
-          */}
-          <thead className="sticky top-0 z-[6] bg-white shadow-sm ring-1 ring-gray-100">
-            <tr className="bg-white border-b border-gray-200 h-24">
-              {/* FIX: Changed z-30 to z-[10] 
-                  Keeps the corner above the header and left column, but low enough for external modals.
-              */}
-              <th className="sticky left-0 z-[10] top-0 bg-gray-50/95 backdrop-blur px-6 py-4 text-left w-60 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)]">
-                <div className="text-base font-bold text-gray-500 uppercase tracking-wider">
-                  Employee Details
+          {/* Header */}
+          <thead className="sticky top-0 z-[11] bg-white shadow-sm ring-1 ring-gray-100">
+            <tr className="bg-white border-b border-gray-200 h-16 sm:h-24">
+              {/* Employee Details Column - Sticky - SUPER SLIM ON MOBILE (w-16) */}
+              <th className="sticky left-0 z-[12] top-0 bg-gray-50/95 backdrop-blur px-2 sm:px-6 py-2 sm:py-4 text-left w-16 sm:w-60 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)]">
+                <div className="text-[10px] sm:text-base font-bold text-gray-500 uppercase tracking-wider truncate">
+                  <span className="hidden sm:inline">
+                    Employee
+                  </span>
+                  <span className="sm:hidden">Emp</span>
                 </div>
               </th>
+              {/* Date Columns */}
               {weekDates.map((date) => {
                 const isToday = isSameDay(date, today);
                 const isInMonth = isDateInMonth(date);
@@ -398,16 +361,16 @@ export function ScheduleGrid({
                   <th
                     key={date.toISOString()}
                     className={cn(
-                      "px-4 py-4 text-center border-b border-r border-gray-100 min-w-[160px]",
+                      "px-1 sm:px-4 py-2 sm:py-4 text-center border-b border-r border-gray-100 min-w-[100px] sm:min-w-[160px]",
                       isToday
                         ? "border-t-2 border-l-2 border-r-2 border-[#EA0029] bg-red-50/10"
                         : !isInMonth && "bg-gray-50/50",
                     )}
                   >
-                    <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="flex flex-col items-center justify-center gap-1 sm:gap-2">
                       <div
                         className={cn(
-                          "w-10 h-10 flex items-center justify-center rounded-full text-base font-bold transition-colors",
+                          "w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-xs sm:text-base font-bold transition-colors",
                           isToday
                             ? "bg-[#EA0029] text-white shadow-sm"
                             : isInMonth
@@ -419,7 +382,7 @@ export function ScheduleGrid({
                       </div>
                       <div
                         className={cn(
-                          "text-base uppercase font-semibold tracking-wider",
+                          "text-[10px] sm:text-base uppercase font-semibold tracking-wider",
                           isToday
                             ? "text-[#EA0029]"
                             : isInMonth
@@ -444,7 +407,6 @@ export function ScheduleGrid({
                 {groupedEmployees[department].map(
                   (employee, idx) => {
                     const isFirstInGroup = idx === 0;
-
                     const isLastRow =
                       deptIdx === departments.length - 1 &&
                       idx ===
@@ -460,26 +422,26 @@ export function ScheduleGrid({
                             : "border-t border-gray-100",
                         )}
                       >
-                        {/* FIX: Changed z-10 to z-[5] 
-                            Keeps this column sticky above body content, but below the new z-[6] header.
-                        */}
-                        <td className="sticky left-0 z-[5] bg-white group-hover:bg-gray-50/80 px-6 py-6 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] align-top h-40">
-                          <div className="h-full flex flex-col justify-start gap-1.5">
+                        {/* Employee Details Cell - Sticky - Adjusted for Mobile */}
+                        <td className="sticky left-0 z-[10] bg-white group-hover:bg-gray-50/80 px-1 sm:px-6 py-2 sm:py-6 border-r border-gray-200 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] align-top h-32 sm:h-40">
+                          <div className="h-full flex flex-col justify-start gap-0.5 sm:gap-1">
                             {isFirstInGroup && (
-                              <div className="text-sm font-extrabold text-gray-400 uppercase tracking-widest mb-2">
+                              <div className="text-[8px] sm:text-sm font-extrabold text-gray-400 uppercase tracking-widest mb-1 sm:mb-2 break-words sm:truncate">
                                 {department}
                               </div>
                             )}
-                            <div className="font-bold text-base text-gray-900 leading-snug">
+                            {/* Mobile: Name wraps, smaller font. Desktop: Normal size. */}
+                            <div className="font-bold text-[10px] sm:text-base text-gray-900 leading-tight sm:leading-snug break-words">
                               {employee.employeeName}
                             </div>
-                            <div className="text-base text-gray-500 font-medium">
+                            {/* Hide designation on mobile to save space and keep sticky column slim */}
+                            <div className="hidden sm:block text-base text-gray-500 font-medium truncate">
                               {employee.designation}
                             </div>
                           </div>
                         </td>
 
-                        {/* Schedule Columns */}
+                        {/* Schedule Cells */}
                         {weekDates.map((date) => {
                           const dateKey = date
                             .toISOString()
@@ -491,10 +453,8 @@ export function ScheduleGrid({
                             today,
                           );
                           const isInMonth = isDateInMonth(date);
-
                           const cellContainerClass =
-                            "w-full h-40";
-
+                            "w-full h-32 sm:h-40";
                           const todayBorderClasses = isToday
                             ? cn(
                                 "border-l-2 border-r-2 border-[#EA0029] bg-red-50/5",
@@ -507,7 +467,7 @@ export function ScheduleGrid({
                               <td
                                 key={dateKey}
                                 className={cn(
-                                  "bg-gray-50/30 border-r border-gray-100 p-0 h-40",
+                                  "bg-gray-50/30 border-r border-gray-100 p-0 h-32 sm:h-40",
                                   todayBorderClasses,
                                 )}
                               >
@@ -522,7 +482,7 @@ export function ScheduleGrid({
                               <td
                                 key={dateKey}
                                 className={cn(
-                                  "border-r border-gray-100 p-0 h-40",
+                                  "border-r border-gray-100 p-0 h-32 sm:h-40",
                                   todayBorderClasses,
                                 )}
                               >
@@ -536,7 +496,7 @@ export function ScheduleGrid({
                             <td
                               key={dateKey}
                               className={cn(
-                                "p-2 align-top border-r p-4 border-gray-100 h-40",
+                                "p-1 sm:p-2 align-top border-r p-2 sm:p-4 border-gray-100 h-32 sm:h-40",
                                 todayBorderClasses,
                               )}
                             >
@@ -558,7 +518,7 @@ export function ScheduleGrid({
                                         />
                                       </div>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-80 p-5 z-50 shadow-xl border-gray-200">
+                                    <PopoverContent className="w-72 sm:w-80 p-4 sm:p-5 z-50 shadow-xl border-gray-200">
                                       <div className="space-y-4">
                                         <div className="font-bold text-base text-gray-900 pb-2 border-b flex justify-between items-center">
                                           <span>
@@ -626,13 +586,6 @@ export function ScheduleGrid({
                                                     "All Day",
                                                   )
                                                 }
-                                                title={
-                                                  entry.shifts.includes(
-                                                    "All Day",
-                                                  )
-                                                    ? "Cannot add shifts when All Day is selected"
-                                                    : ""
-                                                }
                                               >
                                                 <Plus className="w-4 h-4 mr-1" />{" "}
                                                 Add
@@ -670,32 +623,27 @@ export function ScheduleGrid({
                                                         {availableShifts.map(
                                                           (
                                                             s,
-                                                          ) => {
-                                                            const isSelectedElsewhere =
-                                                              entry.shifts.includes(
-                                                                s,
-                                                              ) &&
-                                                              s !==
-                                                                shift;
-
-                                                            return (
-                                                              <SelectItem
-                                                                key={
-                                                                  s
-                                                                }
-                                                                value={
-                                                                  s
-                                                                }
-                                                                disabled={
-                                                                  isSelectedElsewhere
-                                                                }
-                                                              >
-                                                                {
-                                                                  s
-                                                                }
-                                                              </SelectItem>
-                                                            );
-                                                          },
+                                                          ) => (
+                                                            <SelectItem
+                                                              key={
+                                                                s
+                                                              }
+                                                              value={
+                                                                s
+                                                              }
+                                                              disabled={
+                                                                entry.shifts.includes(
+                                                                  s,
+                                                                ) &&
+                                                                s !==
+                                                                  shift
+                                                              }
+                                                            >
+                                                              {
+                                                                s
+                                                              }
+                                                            </SelectItem>
+                                                          ),
                                                         )}
                                                       </SelectContent>
                                                     </Select>
@@ -717,21 +665,6 @@ export function ScheduleGrid({
                                                 ),
                                               )}
                                             </div>
-                                            {entry.shifts.includes(
-                                              "All Day",
-                                            ) && (
-                                              <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded text-sm text-purple-800">
-                                                <strong>
-                                                  All Day shift:
-                                                </strong>{" "}
-                                                This shift
-                                                covers the
-                                                entire day.
-                                                Cannot add or
-                                                select other
-                                                shifts.
-                                              </div>
-                                            )}
                                           </div>
                                         )}
                                       </div>

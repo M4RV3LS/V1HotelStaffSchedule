@@ -18,7 +18,9 @@ export interface EmployeeReport {
   shifts: {
     morning: number;
     afternoon: number;
+    middle: number;
     night: number;
+    longShift: number;
   };
 }
 
@@ -30,7 +32,9 @@ export interface DepartmentReport {
   shifts: {
     morning: number;
     afternoon: number;
+    middle: number;
     night: number;
+    longShift: number;
   };
 }
 
@@ -106,7 +110,9 @@ export function generateEmployeeReports(
     const totalShifts = totalPresent; // Each present day has one shift
     const morning = Math.floor(totalShifts * (0.3 + Math.random() * 0.2));
     const afternoon = Math.floor(totalShifts * (0.3 + Math.random() * 0.2));
-    const night = totalShifts - morning - afternoon;
+    const middle = Math.floor(totalShifts * (0.1 + Math.random() * 0.1));
+    const night = Math.floor(totalShifts * (0.1 + Math.random() * 0.1));
+    const longShift = totalShifts - morning - afternoon - middle - night;
 
     return {
       staffName: staff.name,
@@ -124,7 +130,9 @@ export function generateEmployeeReports(
       shifts: {
         morning,
         afternoon,
+        middle,
         night,
+        longShift,
       },
     };
   });
@@ -149,7 +157,9 @@ export function generateDepartmentReports(
       existing.issueStats.open += emp.issueStats.open;
       existing.shifts.morning += emp.shifts.morning;
       existing.shifts.afternoon += emp.shifts.afternoon;
+      existing.shifts.middle += emp.shifts.middle;
       existing.shifts.night += emp.shifts.night;
+      existing.shifts.longShift += emp.shifts.longShift;
     } else {
       departmentMap.set(emp.department, {
         department: emp.department,

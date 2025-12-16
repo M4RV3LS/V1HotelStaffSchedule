@@ -17,13 +17,13 @@ import {
 } from "./FilterCombobox";
 import { MonthYearPicker } from "./MonthYearPicker";
 import { ExportPreviewDialog } from "./ExportPreviewDialog";
-import { TodayOnDuty } from "./TodayOnDuty";
 import {
   generateMockScheduleData,
   hasScheduleForMonth,
   isMonthAllowed,
 } from "../utils/scheduleData";
 import { getWeekIndexForDate } from "../utils/dateHelpers";
+import { useIsMobile } from "./ui/use-mobile";
 
 interface ScheduleViewProps {
   selectedMonth: Date;
@@ -42,10 +42,11 @@ export function ScheduleView({
   isEditMode,
   setIsEditMode,
 }: ScheduleViewProps) {
-  // Requirement 1: Keep "Who's on duty today" static.
+  const isMobile = useIsMobile();
+
   // We generate data for the ACTUAL current month once on mount.
-  // This ensures that even if the user navigates to next month,
-  // the top dashboard still shows today's real data.
+  // This ensures that even if the user navigates away and back,
+  // the current month's data remains consistent (doesn't regenerate random mock data).
   const [staticCurrentMonthData] = useState(() => {
     const today = new Date();
     const currentMonthStart = new Date(
@@ -53,8 +54,6 @@ export function ScheduleView({
       today.getMonth(),
       1,
     );
-    // In a real app, this would fetch from DB. Here we mock it.
-    // Ensure we have data for "Today" even if the view is somewhere else.
     return generateMockScheduleData(currentMonthStart);
   });
 
@@ -72,8 +71,7 @@ export function ScheduleView({
     setScheduleExists(exists);
     if (exists) {
       // If the selected month is the same as the current real month,
-      // use our static data to ensure consistency between the grid and the dashboard.
-      // Otherwise, generate new mock data for history/future.
+      // use our static data to ensure consistency.
       const today = new Date();
       const isCurrentMonth =
         selectedMonth.getMonth() === today.getMonth() &&
@@ -174,7 +172,7 @@ export function ScheduleView({
     setCurrentWeekStart(newWeekStart);
   };
 
-  // Requirement 2: "Today" shortcut button handler
+  // Requirement: "Today" shortcut button handler
   const handleJumpToToday = () => {
     const today = new Date();
     // Normalize to the first of the month
@@ -188,9 +186,6 @@ export function ScheduleView({
     handleMonthChange(todayMonth);
 
     // Calculate which week contains today
-    // We need to wait for the month to change (state update),
-    // but React batching usually handles this or we can pass the specific index.
-    // Since getWeekIndexForDate is pure, we can calculate immediately.
     const currentWeekIndex = getWeekIndexForDate(today);
     setCurrentWeekStart(currentWeekIndex);
   };
@@ -215,31 +210,37 @@ export function ScheduleView({
 
   const handleSaveChanges = () => {
     // Validation: Auto-mark employees as "Absent" if they have no shifts
-    const validatedScheduleData = scheduleData.map((employee) => {
-      const updatedSchedule = { ...employee.schedule };
-      
-      // Check each date in the employee's schedule
-      Object.keys(updatedSchedule).forEach((dateKey) => {
-        const daySchedule = updatedSchedule[dateKey];
-        
-        // If employee is marked as Present but has no shifts, change to Absent
-        if (daySchedule.attendance === "Present" && (!daySchedule.shifts || daySchedule.shifts.length === 0)) {
-          updatedSchedule[dateKey] = {
-            attendance: "Absent",
-            shifts: [],
-          };
-        }
-      });
-      
-      return {
-        ...employee,
-        schedule: updatedSchedule,
-      };
-    });
-    
+    const validatedScheduleData = scheduleData.map(
+      (employee) => {
+        const updatedSchedule = { ...employee.schedule };
+
+        // Check each date in the employee's schedule
+        Object.keys(updatedSchedule).forEach((dateKey) => {
+          const daySchedule = updatedSchedule[dateKey];
+
+          // If employee is marked as Present but has no shifts, change to Absent
+          if (
+            daySchedule.attendance === "Present" &&
+            (!daySchedule.shifts ||
+              daySchedule.shifts.length === 0)
+          ) {
+            updatedSchedule[dateKey] = {
+              attendance: "Absent",
+              shifts: [],
+            };
+          }
+        });
+
+        return {
+          ...employee,
+          schedule: updatedSchedule,
+        };
+      },
+    );
+
     // Update the schedule data with validated data
     setScheduleData(validatedScheduleData);
-    
+
     setIsEditMode(false);
     alert("Changes saved successfully!");
   };
@@ -302,27 +303,6 @@ export function ScheduleView({
     });
   }, [scheduleData, selectedFilters]);
 
-  // For the dashboard, we also need to apply filters if you want the "Today" view
-  // to respect the filters selected by the user.
-  // Requirement 1 implies "Who's on duty today" is static in terms of TIME,
-  // but usually dashboard widgets respect active filters.
-  // I will apply filters to it so the user can see "Who from Housekeeping is on duty today".
-  const filteredStaticData = useMemo(() => {
-    if (selectedFilters.length === 0)
-      return staticCurrentMonthData;
-    return staticCurrentMonthData.filter((employee: any) => {
-      return selectedFilters.some((filter) => {
-        if (filter.type === "department")
-          return employee.department === filter.value;
-        if (filter.type === "designation")
-          return employee.designation === filter.value;
-        if (filter.type === "name")
-          return employee.employeeName === filter.value;
-        return false;
-      });
-    });
-  }, [staticCurrentMonthData, selectedFilters]);
-
   const weekDisplay =
     currentWeekDates.length > 0
       ? `Week ${currentWeekStart + 1} (${currentWeekDates[0].toLocaleDateString(
@@ -342,31 +322,36 @@ export function ScheduleView({
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-hidden font-sans">
       {/* 1. Header Section */}
-      <div className="bg-[#EA0029] text-white px-6 py-4 flex items-center justify-between shrink-0 shadow-md z-40">
-        <h1 className="text-xl font-semibold tracking-wide">
-          Employee Schedule - {monthYearDisplay}
+      <div className="bg-[#EA0029] text-white px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between shrink-0 shadow-md z-20 gap-3">
+        <h1 className="text-lg sm:text-xl font-semibold tracking-wide flex items-center">
+          <span className="truncate">
+            Schedule - {monthYearDisplay}
+          </span>
           {isEditMode && (
-            <span className="opacity-80 font-normal">
-              {" "}
-              (Editing)
+            <span className="ml-2 opacity-80 font-normal text-sm bg-white/20 px-2 py-0.5 rounded">
+              Editing
             </span>
           )}
         </h1>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {scheduleExists && !isEditMode && (
             <>
               <button
                 onClick={() => setIsEditMode(true)}
-                className="px-4 py-2 bg-white/10 text-white border border-white/20 rounded hover:bg-white/20 transition-colors flex items-center gap-2 text-base"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white/10 text-white border border-white/20 rounded hover:bg-white/20 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
               >
-                <Edit2 className="w-5 h-5" /> Edit
+                <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" /> Edit
               </button>
               <button
                 onClick={() => setIsExportDialogOpen(true)}
-                className="px-4 py-2 bg-white text-[#EA0029] font-medium rounded hover:bg-gray-100 transition-colors flex items-center gap-2 text-base shadow-sm"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white text-[#EA0029] font-medium rounded hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base shadow-sm"
               >
-                <Download className="w-5 h-5" /> Export PDF
+                <Download className="w-4 h-4 sm:w-5 sm:h-5" />{" "}
+                <span className="hidden sm:inline">
+                  Export PDF
+                </span>
+                <span className="sm:hidden">PDF</span>
               </button>
             </>
           )}
@@ -375,15 +360,15 @@ export function ScheduleView({
             <>
               <button
                 onClick={handleCancelEdit}
-                className="px-4 py-2 bg-black/20 text-white rounded hover:bg-black/30 transition-colors flex items-center gap-2 text-base"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-black/20 text-white rounded hover:bg-black/30 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
               >
-                <X className="w-5 h-5" /> Cancel
+                <X className="w-4 h-4 sm:w-5 sm:h-5" /> Cancel
               </button>
               <button
                 onClick={handleSaveChanges}
-                className="px-4 py-2 bg-white text-[#EA0029] font-bold rounded hover:bg-gray-100 transition-colors flex items-center gap-2 text-base shadow-sm"
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-white text-[#EA0029] font-bold rounded hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base shadow-sm"
               >
-                <Save className="w-5 h-5" /> Save Changes
+                <Save className="w-4 h-4 sm:w-5 sm:h-5" /> Save
               </button>
             </>
           )}
@@ -391,39 +376,42 @@ export function ScheduleView({
       </div>
 
       {/* 2. Content */}
-      <div className="flex-1 overflow-auto p-6 flex flex-col">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 flex flex-col">
         <div className="flex flex-col gap-6">
-          {/* Controls Section - Always visible for navigation */}
-          <div className="bg-white border border-gray-200 px-6 py-4 rounded-lg shadow-sm flex items-center gap-6">
-            <div className="shrink-0 flex items-center gap-3">
-              <MonthYearPicker
-                selectedMonth={selectedMonth}
-                onChange={handleMonthChange}
-              />
-              {/* Requirement 2: Today Button */}
+          {/* Controls Section - Responsive Wrapper */}
+          <div className="bg-white border border-gray-200 px-4 py-4 rounded-lg shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
+            {/* Date Nav */}
+            <div className="flex items-center gap-2 w-full lg:w-auto">
+              <div className="flex-1 lg:flex-none">
+                <MonthYearPicker
+                  selectedMonth={selectedMonth}
+                  onChange={handleMonthChange}
+                />
+              </div>
               <button
                 onClick={handleJumpToToday}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors shrink-0"
                 title="Jump to current week"
               >
                 <CalendarCheck className="w-4 h-4 text-[#EA0029]" />
-                Today
+                <span className="hidden sm:inline">Today</span>
               </button>
             </div>
 
             {scheduleExists && (
               <>
-                <div className="flex-1 max-w-2xl">
+                <div className="flex-1 w-full lg:w-auto min-w-0">
                   <FilterCombobox
                     departments={filterOptions.departments}
                     designations={filterOptions.designations}
                     staffNames={filterOptions.employeeNames}
                     selectedFilters={selectedFilters}
                     onFilterChange={setSelectedFilters}
+                    className="w-full"
                   />
                 </div>
 
-                <div className="flex items-center gap-2 ml-auto shrink-0 bg-gray-50 p-1.5 rounded-md border border-gray-200">
+                <div className="flex items-center justify-between gap-2 lg:ml-auto shrink-0 bg-gray-50 p-1.5 rounded-md border border-gray-200 w-full lg:w-auto">
                   <button
                     onClick={() => handleWeekNavigation("prev")}
                     disabled={!canGoPrevious}
@@ -431,7 +419,7 @@ export function ScheduleView({
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
-                  <span className="text-base font-medium text-gray-700 min-w-[200px] text-center select-none">
+                  <span className="text-sm sm:text-base font-medium text-gray-700 w-full text-center select-none truncate px-2">
                     {weekDisplay}
                   </span>
                   <button
@@ -455,7 +443,8 @@ export function ScheduleView({
             />
           ) : (
             <>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              {/* Main Grid */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 min-h-[400px]">
                 <ScheduleGrid
                   weekDates={currentWeekDates}
                   scheduleData={filteredScheduleData}
@@ -465,11 +454,6 @@ export function ScheduleView({
                   selectedMonth={selectedMonth}
                 />
               </div>
-
-              {/* Requirement 1: TodayOnDuty uses staticCurrentMonthData */}
-              {/* Note: In a real app with Supabase, we would fetch today's data separately 
-                  or filter it from the DB. Here, we pass the static mock data we created. */}
-              <TodayOnDuty scheduleData={filteredStaticData} />
             </>
           )}
         </div>

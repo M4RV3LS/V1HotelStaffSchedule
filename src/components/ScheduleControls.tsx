@@ -35,8 +35,8 @@ export function ShiftLegend() {
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-x-8 gap-y-4 text-sm border-t border-gray-200 pt-5 px-6 bg-white pb-2">
-      <span className="font-bold text-gray-900 mr-2 text-base">
+    <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-y-3 sm:gap-y-4 sm:gap-x-8 text-sm border-t border-gray-200 pt-5 px-6 bg-white pb-6 sm:pb-2">
+      <span className="font-bold text-gray-900 mr-2 text-base mb-1 sm:mb-0">
         Shift Legend:
       </span>
       {items.map((item) => (
@@ -46,7 +46,7 @@ export function ShiftLegend() {
         >
           <div
             className={cn(
-              "w-5 h-5 rounded-sm border shadow-sm",
+              "w-5 h-5 rounded-sm border shadow-sm shrink-0",
               item.color,
             )}
           />
